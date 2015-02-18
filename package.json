@@ -1,0 +1,43 @@
+{
+  "name": "event-calendar",
+  "version": "0.0.0",
+  "description": "An iCalendar / jCal compatible event calendar",
+  "author": "Troy Martin <troy@scriptedmotion.com>",
+  "license": "MIT",
+  "scripts": {
+    "test": "mocha -u tdd"
+  },
+  "main": "lib/calendar_event.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fourlincoln10/event_calendar"
+  },
+  "bugs": {
+    "url": "https://github.com/fourlincoln10/event_calendar/issues"
+  },
+  "keywords": [
+    "event",
+    "calendar",
+    "ical",
+    "jcal"
+  ],
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "gulp": "~3.8.11",
+    "ical.js": "~0.0.6",
+    "moment-timezone": "~0.3.0",
+    "nano": "~6.0.2",
+    "node-uuid": "~1.4.2",
+    "underscore": "~1.7.0"
+  },
+  "devDependencies": {
+    "chai": "~1.10.0",
+    "sinon": "~1.12.2",
+    "nock": "~0.59.1",
+    "gulp-mocha": "~2.0.0",
+    "gulp-jshint": "~1.9.2",
+    "jshint-stylish": "~1.0.0"
+  }
+}
