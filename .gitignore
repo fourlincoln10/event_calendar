@@ -1,0 +1,19 @@
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+
+# Directories #
+######################
+node_modules
+
+
+# Files #
+######################
+ce.html
+scratchpad*.*
+test_results.json
