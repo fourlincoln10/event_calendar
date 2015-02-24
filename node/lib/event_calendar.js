@@ -679,7 +679,7 @@ function updateInstance(opts, evt) {
 function updateThisAndFutureFirstOcc(opts, evt) {
   opts = _.clone(opts);
   updateMainEventAndAllExceptions(opts, evt);
-  console.log(toIcs(evt));
+  //console.log(toIcs(evt));
   return evt;
 }
 
@@ -749,7 +749,7 @@ function updateThisAndFutureSecondPlusOcc(opts, evt) {
       evt.splice(i, 1);
     }
   }
-  console.log(toIcs(vevents));
+  //console.log(toIcs(vevents));
   return {oldEvent: evt, newEvent: vevents};
 }
 
