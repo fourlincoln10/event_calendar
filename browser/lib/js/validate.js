@@ -48,7 +48,7 @@ Event_Calendar.Validate = {
   },
 
   validateDtstart : function validateDtstart(dtstart) {
-    return this.validateIsoDateTimeString(dtstart);
+    return this.validateIsoDateTimeString(dtstart) && (+new Date(dtstart) > +new Date("01/01/1970"));
   },
 
   validateDtend : function validateDtend(dtend) {
@@ -139,22 +139,27 @@ Event_Calendar.Validate = {
 
   validateEvent : function validateEvent(e) {
     var ctx = this;
+    var errors = [];
     var rrule = _.pick(e, Event_Calendar.Cfg.REPEAT_PROPERTIES);
-    var everythingElse =  _.pick(e, _.without(Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW, Event_Calendar.Cfg.REPEAT_PROPERTIES));
-    var errors = this.validateRRule(rrule);
+    var everythingElse =  _.pick(e, _.difference(Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW, Event_Calendar.Cfg.REPEAT_PROPERTIES));
+    // Required Fields
+    if(!everythingElse.dtstart) {
+      errors.push(new Event_Calendar.Errors.RequiredError(Event_Calendar.Cfg.DTSTART_REQUIRED_ERR_MSG, "dtstart"));
+    }
+    if(!everythingElse.dtend) {
+      errors.push(new Event_Calendar.Errors.RequiredError(Event_Calendar.Cfg.DTEND_REQUIRED_ERR_MSG, "dtend"));
+    }
+    // Validate individual properties
+    errors = errors.concat(this.validateRRule(rrule));
     Object.keys(everythingElse).forEach(function(prop){
       if(!ctx.validateProperty(prop, e[prop])) {
         var reason = typeof Event_Calendar.Cfg[prop.toUpperCase() + "_ERR_MSG"] !== "undefined" ? Event_Calendar.Cfg[prop.toUpperCase() + "_ERR_MSG"] : "Unknown error";
         errors.push(new Event_Calendar.Errors.InvalidError(reason, prop));
       }
     });
-    if(!_.find(errors, function(e){return e.eventProperty == "dtstart";})) {
-      if(e.dtstart && +new Date(e.dtstart) < +new Date("01/01/1970")) {
-        errors.push(new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.DTSTART_TOO_OLD_ERR_MSG, "dtstart"));
-      }
-      if(e.dtstart && e.until && (+new Date(e.dtstart) >= +new Date(e.until)) ) {
-        errors.push(new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.END_BEFORE_START_ERR_MSG, "until"));
-      }
+    // Multi-field validation
+    if(e.dtstart && e.until && (+new Date(e.dtstart) >= +new Date(e.until)) ) {
+      errors.push(new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.END_BEFORE_START_ERR_MSG, "until"));
     }
     return errors;
   }

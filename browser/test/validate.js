@@ -1,3 +1,5 @@
+/*jshint expr: true*/
+
 /**
  * Browser Validate Event Unit Tests
  */
@@ -23,6 +25,10 @@ describe("Validate individual fields", function() {
   describe("dtstart ->", function() {
     it("should return false if dtstart is not a valid date", function(){
       var results = v.validateDtstart("invalid");
+      expect(results).to.be.false;
+    });
+    it("should return false if dtstart is <= 01/01/1970", function(){
+      var results = v.validateDtstart("1969-01-01T09:00:00");
       expect(results).to.be.false;
     });
     it("should return true if dtstart is a valid date", function(){
@@ -184,6 +190,18 @@ describe("Validate Event", function() {
       summary: "A summary",
       description: "A description"
     };
+  });
+
+  it("should return error if dtstart is not present", function(){
+    delete e.dtstart;
+    var errors = v.validateEvent(e);
+    expect(errors.length).to.be.above(0);
+  });
+
+  it("should return error if dtend is not present", function(){
+    delete e.dtend;
+    var errors = v.validateEvent(e);
+    expect(errors.length).to.be.above(0);
   });
 
   it("should return error if rrule is invalid", function(){

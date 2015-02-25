@@ -30,7 +30,9 @@ Event_Calendar.Cfg = {
   ISO_DATETIME_REGEX          : /\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\dZ?/,
   FREQ_ERR_MSG                : "You must choose never,daily,weekly,monthly or yearly",
   INTERVAL_ERR_MSG            : "Must be empty or an integer >= 1",
-  DTSTART_ERR_MSG             : "Please enter a valid date: mm/dd/yyyy hh:mm AM|PM",
+  DTSTART_ERR_MSG             : "Please enter a valid date > 01/01/1970. Format: mm/dd/yyyy hh:mm AM|PM",
+  DTSTART_REQUIRED_ERR_MSG    : "Start date is required",
+  DTEND_REQUIRED_ERR_MSG      : "End date is required",
   END_BEFORE_START_ERR_MSG    : "End date must be after start date",
   DTSTART_TOO_OLD_ERR_MSG     : "Start date too far in past",
   COUNT_ERR_MSG               : "Must be empty or an integer >= 1",
@@ -171,7 +173,7 @@ Event_Calendar.Validate = {
   },
 
   validateDtstart : function validateDtstart(dtstart) {
-    return this.validateIsoDateTimeString(dtstart);
+    return this.validateIsoDateTimeString(dtstart) && (+new Date(dtstart) > +new Date("01/01/1970"));
   },
 
   validateDtend : function validateDtend(dtend) {
@@ -262,22 +264,29 @@ Event_Calendar.Validate = {
 
   validateEvent : function validateEvent(e) {
     var ctx = this;
+    var errors = [];
     var rrule = _.pick(e, Event_Calendar.Cfg.REPEAT_PROPERTIES);
-    var everythingElse =  _.pick(e, _.without(Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW, Event_Calendar.Cfg.REPEAT_PROPERTIES));
-    var errors = this.validateRRule(rrule);
+    var everythingElse =  _.pick(e, _.difference(Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW, Event_Calendar.Cfg.REPEAT_PROPERTIES));
+    // Required Fields
+    if(!everythingElse.dtstart) {
+      console.log("dtstart not present");
+      errors.push(new Event_Calendar.Errors.RequiredError(Event_Calendar.Cfg.DTSTART_REQUIRED_ERR_MSG, "dtstart"));
+    }
+    if(!everythingElse.dtend) {
+      console.log("dtend not present");
+      errors.push(new Event_Calendar.Errors.RequiredError(Event_Calendar.Cfg.DTEND_REQUIRED_ERR_MSG, "dtend"));
+    }
+    // Validate individual properties
+    errors = errors.concat(this.validateRRule(rrule));
     Object.keys(everythingElse).forEach(function(prop){
       if(!ctx.validateProperty(prop, e[prop])) {
         var reason = typeof Event_Calendar.Cfg[prop.toUpperCase() + "_ERR_MSG"] !== "undefined" ? Event_Calendar.Cfg[prop.toUpperCase() + "_ERR_MSG"] : "Unknown error";
         errors.push(new Event_Calendar.Errors.InvalidError(reason, prop));
       }
     });
-    if(!_.find(errors, function(e){return e.eventProperty == "dtstart";})) {
-      if(e.dtstart && +new Date(e.dtstart) < +new Date("01/01/1970")) {
-        errors.push(new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.DTSTART_TOO_OLD_ERR_MSG, "dtstart"));
-      }
-      if(e.dtstart && e.until && (+new Date(e.dtstart) >= +new Date(e.until)) ) {
-        errors.push(new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.END_BEFORE_START_ERR_MSG, "until"));
-      }
+    // Multi-field validation
+    if(e.dtstart && e.until && (+new Date(e.dtstart) >= +new Date(e.until)) ) {
+      errors.push(new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.END_BEFORE_START_ERR_MSG, "until"));
     }
     return errors;
   }
@@ -291,33 +300,56 @@ Event_Calendar.Validate = {
 Event_Calendar.Model = (function(){
   "use strict";
 
+  /**
+   * Private Properties / Functions
+   */
   var v = Event_Calendar.Validate;
+  var data = {};
+  var savedState = null;
 
-  function Model(data){
-    this.data = null;
-    this.fieldsManagedByView = Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW;
-    if(data) {
-      if(v.validateEvent(data)) {
-        this.data = data;
-      }
-      else {
-        console.log("Event_Calendar.Model() Invalid data passed to constructor");
-      }
+  function publish(evtType, data) {
+    postal.publish({
+      topic: "model." + evtType,
+      data: data || {}
+    });
+    return data;
+  }
+
+  function subscribe(topic, callback) {
+    postal.subscribe({
+      topic: topic,
+      callback: callback
+    });
+  }
+
+  /**
+   * Model Constructor
+   * @param {Object} evt An object containing event properties
+   */
+  function Model(evt){
+    if(evt) {
+      this.setEvent(evt);
     }
   }
 
+  /**
+   * API
+   */
   Model.prototype = {
 
     /**
      * Get data
      */
+    getSavedState : function getSavedState() {
+      return _.extend({}, savedState);
+    },
 
     getProperty : function getProperty(prop) {
-      return this.data[prop];
+      return data[prop];
     },
 
     getEvent : function getEvent() {
-      return _.extend({}, this.data);
+      return _.extend({}, data);
     },
 
     /**
@@ -325,14 +357,13 @@ Event_Calendar.Model = (function(){
      */
     setProperty : function setProperty(prop, val) {
       var err;
-      if(this.fieldsManagedByView.indexOf(prop) === -1) {
+      if(Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW.indexOf(prop) === -1) {
         err = new Event_Calendar.Errors.UnknownPropertyError("Unknown property", prop);
-        amplify.publish("ceModelError", err);
-        return err;
+        return publish("error", err);
       }
       else if(!v.validateProperty(prop, val)) {
         err = new Event_Calendar.Errors.InvalidError("Invalid " + prop, prop);
-        return amplify.publish("ceModelError", err);
+        return publish("error", err);
       }
       // Validate event as a whole so errors involving multiple properties are caught.
       var e = this.getEvent();
@@ -340,35 +371,47 @@ Event_Calendar.Model = (function(){
       var validationErrors = v.validateEvent(e);
       if(validationErrors.length > 0) {
         err = new Event_Calendar.Errors.ErrorGroup(validationErrors);
-        return amplify.publish("ceModelError", err);
+        return publish("error", err);
       }
-      this.data[prop] = val;
-      amplify.publish("ceModelUpdated", e);
+      data[prop] = val;
+      return publish("updated", e);
     },
 
-    setEvent : function setFieldsEditableByView(fields) {
-      amplify.publish("ceModelSetFieldsEditableByView");
-      if(!fields) return;
-      fields = _.pick(fields, Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW);
-      var temp = _.extend({}, this.data, fields);
+    setEvent : function setEvent(evt) {
+      publish("setevent");
+      if(!evt) return;
+      evt = _.pick(evt, Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW);
+      var temp = _.extend({}, data, evt);
       var validationErrors = v.validateEvent(temp);
       if(validationErrors.length === 0) {
-        this.data = temp;
-        return amplify.publish("ceModelUpdated", this.getEvent());
+        data = temp;
+        if(!savedState) savedState = _.extend({}, temp);
+        return publish("updated", this.getEvent());
+      } 
+      else {
+        var err = new Event_Calendar.Errors.ErrorGroup(null, validationErrors);
+        return publish("error", err);
       }
-      var err = new Event_Calendar.Errors.ErrorGroup(validationErrors);
-      amplify.publish("ceModelError", err);
-      return err;
     },
 
     /**
      *  Remove data
      */
     removeProperty : function removeProperty(prop) {
-      if(typeof this.data[prop] !== "undefined") {
-        delete this.data[prop];
-        amplify.publish("ceModelUpdated", this.getEvent());
+      if(typeof data[prop] !== "undefined") {
+        delete data[prop];
+        return publish("updated", this.getEvent());
       }
+    },
+
+    // MAKE THIS PRIVATE...HERE FOR TESTING PURPOSES ONLY
+    diff : function diff() {
+      if(!savedState) return;
+      var tempData = _.pick(data, _.identity); // Remove falsy values
+      var tempSavedState = _.pick(savedState, _.identity); // Remove falsy values
+      var newProps = _.difference(Object.keys(tempData), Object.keys(tempSavedState));
+      var diffProps = _.omit(tempData, function(v,k) { return tempSavedState[k] === v; });
+      return _.extend(newProps, diffProps);
     }
 
   };

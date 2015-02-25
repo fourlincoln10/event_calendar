@@ -26,10 +26,14 @@
   },
   "dependencies": {
     "gulp": "~3.8.11",
-    "ical.js": "~0.0.6",
+    "gulp-concat": "~2.5.2",
+    "gulp-jshint": "~1.9.2",
+    "gulp-mocha": "~2.0.0",
+    "ical.js": "0.0.6",
     "moment-timezone": "~0.3.0",
     "nano": "~6.0.2",
     "node-uuid": "~1.4.2",
+    "postal": "~1.0.0",
     "underscore": "~1.7.0"
   },
   "devDependencies": {
