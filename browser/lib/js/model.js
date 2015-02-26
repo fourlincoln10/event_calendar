@@ -9,8 +9,7 @@ Event_Calendar.Model = (function(){
    * Private Properties / Functions
    */
   var v = Event_Calendar.Validate;
-  var data = {};
-  var savedState = null;
+  var data, savedState;
 
   function publish(evtType, data) {
     postal.publish({
@@ -28,10 +27,35 @@ Event_Calendar.Model = (function(){
   }
 
   /**
+   * Diff : Calculate changes since the last time state was saved
+   * Goal is to identify: 
+   *  1. Properties that are not in data that are in savedState
+   *  2. Properties that are not in savedState but are in data
+   *  3. Properties that are in both objects but have different values
+   * @return {Object} Object containing properties that are "different" (see goal above)
+  */
+  function diff() {
+    if(!savedState) return;
+    var tempData = JSON.parse(JSON.stringify(data));
+    var tempSavedState = JSON.parse(JSON.stringify(savedState));
+    // Values from saved state that do not exist in data
+    // 1. Properties that are not in data that are in savedState
+    //    Set to falsy to indicate that the property has been changed and should be removed
+    var old = _.pick(tempSavedState, _.difference(Object.keys(tempSavedState), Object.keys(tempData)));
+    Object.keys(old).forEach(function(key){old[key] = typeof old[key] === "string" ? "" : null;});
+    //  2. Properties that are not in savedState but are in data
+    //  3. Properties that are in both objects but have different values
+    var d = _.omit(tempData, function(v,k) { return tempSavedState[k] === v; });
+    return _.extend(d, old);
+  }
+
+  /**
    * Model Constructor
    * @param {Object} evt An object containing event properties
    */
   function Model(evt){
+    data = {};
+    savedState = null;
     if(evt) {
       this.setEvent(evt);
     }
@@ -66,7 +90,11 @@ Event_Calendar.Model = (function(){
         err = new Event_Calendar.Errors.UnknownPropertyError("Unknown property", prop);
         return publish("error", err);
       }
-      else if(!v.validateProperty(prop, val)) {
+      // If setting to "", null etc. remove instead
+      if(!prop) {
+        return this.removeProperty(prop);
+      }
+      if(!v.validateProperty(prop, val)) {
         err = new Event_Calendar.Errors.InvalidError("Invalid " + prop, prop);
         return publish("error", err);
       }
@@ -75,7 +103,7 @@ Event_Calendar.Model = (function(){
       e[prop] = val;
       var validationErrors = v.validateEvent(e);
       if(validationErrors.length > 0) {
-        err = new Event_Calendar.Errors.ErrorGroup(validationErrors);
+        err = new Event_Calendar.Errors.ErrorGroup("", validationErrors);
         return publish("error", err);
       }
       data[prop] = val;
@@ -85,8 +113,9 @@ Event_Calendar.Model = (function(){
     setEvent : function setEvent(evt) {
       publish("setevent");
       if(!evt) return;
-      evt = _.pick(evt, Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW);
+      evt = _.pick(evt, _.identity); // Only allow properties that have a truthy value
       var temp = _.extend({}, data, evt);
+      if(!temp.freq) temp = _.omit(temp, Event_Calendar.Cfg.REPEAT_PROPERTIES);
       var validationErrors = v.validateEvent(temp);
       if(validationErrors.length === 0) {
         data = temp;
@@ -105,18 +134,12 @@ Event_Calendar.Model = (function(){
     removeProperty : function removeProperty(prop) {
       if(typeof data[prop] !== "undefined") {
         delete data[prop];
+        // Can't have an RRule w/o a freq
+        if(prop == "freq") {
+          data = _.omit(data, Event_Calendar.Cfg.REPEAT_PROPERTIES);
+        }
         return publish("updated", this.getEvent());
       }
-    },
-
-    // MAKE THIS PRIVATE...HERE FOR TESTING PURPOSES ONLY
-    diff : function diff() {
-      if(!savedState) return;
-      var tempData = _.pick(data, _.identity); // Remove falsy values
-      var tempSavedState = _.pick(savedState, _.identity); // Remove falsy values
-      var newProps = _.difference(Object.keys(tempData), Object.keys(tempSavedState));
-      var diffProps = _.omit(tempData, function(v,k) { return tempSavedState[k] === v; });
-      return _.extend(newProps, diffProps);
     }
 
   };
