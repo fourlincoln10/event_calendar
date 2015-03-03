@@ -150,7 +150,7 @@ Event_Calendar.Validate = {
       errors.push(new Event_Calendar.Errors.RequiredError(Event_Calendar.Cfg.DTEND_REQUIRED_ERR_MSG, "dtend"));
     }
     // Validate individual properties
-    errors = errors.concat(this.validateRRule(rrule));
+    if(Object.keys(rrule).length > 0) { errors = errors.concat(this.validateRRule(rrule)); }
     Object.keys(everythingElse).forEach(function(prop){
       if(!ctx.validateProperty(prop, e[prop])) {
         var reason = typeof Event_Calendar.Cfg[prop.toUpperCase() + "_ERR_MSG"] !== "undefined" ? Event_Calendar.Cfg[prop.toUpperCase() + "_ERR_MSG"] : "Unknown error";

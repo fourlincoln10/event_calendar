@@ -185,24 +185,11 @@ describe("Remove property", function() {
     em.removeProperty("count");
     expect(em.getProperty("count")).to.be.undefined;
   });
-});
-
-/**
- * Calculate Diff
- * REMOVE THIS ASAP AS CALCULATEDIFF() NEEDS TO BE PRIVATE
- */
-describe("Diff", function() {
-  var ee;
-  beforeEach(function() {
-    ee = JSON.parse(JSON.stringify(existingEvt));
-  });
-  it("It should identify dtstart as different", function() {
+  it("It should remove all rrule properties when removing freq", function() {
     var em = new Event_Calendar.Model(ee);
-    em.setProperty("dtstart", "2016-01-01T09:00:00");
-    var diff = em.diff();
-    console.log("diff: ", diff);
-    expect(diff.dtstart).to.exist;
-    expect(Object.keys(diff).length).to.equal(1);
+    em.removeProperty("freq");
+    expect(em.getProperty("freq")).to.be.undefined;
+    expect(em.getProperty("count")).to.be.undefined;
   });
 });
 
