@@ -17,4 +17,3 @@ node_modules
 ce.html
 scratchpad*.*
 test_results.json
-browser/build/*.*
