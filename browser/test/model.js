@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2015, Scripted Motion, LLC
  */
 postal = require("postal");
-var buildpath = "/Users/troy/event_calendar/browser/build";
+var buildpath = "../build";
 require(buildpath + "/event_calendar"); // Instantiates Event_Calendar
 var expect = require("chai").expect;
 var nock = require("nock");
