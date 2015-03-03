@@ -269,11 +269,9 @@ Event_Calendar.Validate = {
     var everythingElse =  _.pick(e, _.difference(Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW, Event_Calendar.Cfg.REPEAT_PROPERTIES));
     // Required Fields
     if(!everythingElse.dtstart) {
-      console.log("dtstart not present");
       errors.push(new Event_Calendar.Errors.RequiredError(Event_Calendar.Cfg.DTSTART_REQUIRED_ERR_MSG, "dtstart"));
     }
     if(!everythingElse.dtend) {
-      console.log("dtend not present");
       errors.push(new Event_Calendar.Errors.RequiredError(Event_Calendar.Cfg.DTEND_REQUIRED_ERR_MSG, "dtend"));
     }
     // Validate individual properties
