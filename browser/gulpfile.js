@@ -43,6 +43,7 @@ gulp.task("test", ["concat"], function () {
 
 gulp.task("sass", function() {
   return gulp.src("./lib/sass/*.scss")
+             .pipe(sass())
              .pipe(gulp.dest("css"));
 });
 
