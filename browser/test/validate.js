@@ -7,7 +7,7 @@ moment = require("moment-timezone");
 _ = require("underscore");
 var expect = require("chai").expect;
 var nock = require("nock");
-var buildpath = "/Users/troy/event_calendar/browser/build";
+var buildpath = "../build";
 require(buildpath + "/event_calendar"); // Instantiates Event_Calendar
 
 
