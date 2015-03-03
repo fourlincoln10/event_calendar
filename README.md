@@ -1,4 +1,6 @@
-# Event Calendar - iCal / jCal event calendar (MIT License)
+# Event Calendar
+
+###  iCalendar / jCal compatible (MIT License)
 
 This is the beginning of an event calendar component that is iCalendar and jCal compatible. I am currently working on a Node JS server implementation combined with a UI for web browsers. 
 
