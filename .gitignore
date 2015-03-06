@@ -10,6 +10,9 @@ Thumbs.db
 # Directories #
 ######################
 node_modules
+kendo-ui-core
+.sass-cache/
+test_site
 
 
 # Files #

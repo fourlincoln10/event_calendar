@@ -39,8 +39,10 @@ Event_Calendar.Validate = {
     return false;
   },
 
-  validateIsoDateTimeString : function validateIsoDateTimeString(d) {
-    return typeof d == "string" && (d.search(Event_Calendar.Cfg.ISO_DATETIME_REGEX) > -1) && moment(d).isValid();
+  validateIsoDateString : function validateIsoDateString(d) {
+    return typeof d == "string" && 
+    ( (d.search(Event_Calendar.Cfg.ISO_DATE_REGEX) > -1) || (d.search(Event_Calendar.Cfg.ISO_DATETIME_REGEX) > -1) ) && 
+    moment(d).isValid();
   },
 
   validateRepeatType : function validateRepeatType(rt) {
@@ -48,11 +50,11 @@ Event_Calendar.Validate = {
   },
 
   validateDtstart : function validateDtstart(dtstart) {
-    return this.validateIsoDateTimeString(dtstart) && (+new Date(dtstart) > +new Date("01/01/1970"));
+    return this.validateIsoDateString(dtstart) && (+new Date(dtstart) > +new Date("01/01/1970"));
   },
 
   validateDtend : function validateDtend(dtend) {
-    return this.validateIsoDateTimeString(dtend);
+    return this.validateIsoDateString(dtend);
   },
 
   validateSummary : function validateSummary(sum) {
@@ -76,7 +78,7 @@ Event_Calendar.Validate = {
   },
 
   validateUntil : function validateUntil(until) {
-    return this.validateIsoDateTimeString(until);
+    return this.validateIsoDateString(until);
   },
 
   validateByday : function validateByday(byday) {

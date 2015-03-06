@@ -32,7 +32,11 @@ describe("Validate individual fields", function() {
       expect(results).to.be.false;
     });
     it("should return true if dtstart is a valid date", function(){
-      var results = v.validateDtstart(new Date().toISOString());
+      var results = v.validateDtstart("2015-03-25");
+      expect(results).to.be.true;
+    });
+    it("should return true if dtstart is a valid datetime", function(){
+      var results = v.validateDtstart("2015-03-25T09:00:00");
       expect(results).to.be.true;
     });
   });
@@ -126,8 +130,8 @@ describe("Validate individual fields", function() {
       var results = v.validateUntil("invalid_date");
       expect(results).to.exist;
     });
-    it("should return ok if until is a valid ISO date string", function(){
-      var results = v.validateUntil(new Date().toISOString());
+    it("should return ok if until is a valid date", function(){
+      var results = v.validateUntil("2015-03-25T09:00:00");
       expect(results).to.be.true;
     });
   });
