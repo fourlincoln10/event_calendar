@@ -1,4 +1,7 @@
 <div class="edit-event-container">
+  <div class="save-button-row row">
+    <button class="save-button" title="Save">Save</button>
+  </div>
   <div class="title-row row">
     <label>Title</label>
     <input type="text" title="Event Title" class="summary" />
@@ -7,25 +10,25 @@
     <label>Start/End</label>
     <span class="dtstart-group">
       <span class="dtstart-prefix prefix">From</span>
-      <input type="text" title="From Date" class="dtstart-date" /> 
+      <input type="date" title="From Date" class="dtstart-date" /> 
       <span class="dtstart-separator separator">at</span>
-      <input type="text" title="From Time" class="dtstart-time" />
+      <input type="time" title="From Time" class="dtstart-time" />
     </span>
     <span class="dtend-group">
       <span class="dtend-prefix prefix">To</span>
-      <input type="text" title="To Date" class="dtend-date" /> 
+      <input type="date" title="To Date" class="dtend-date" /> 
       <span class="dtend-separator separator">at</span>
-      <input type="text" title="To Time" class="dtend-time" />
+      <input type="time" title="To Time" class="dtend-time" />
     </span>
   </div>
   <div class="allday-row row">
-    <label>All Day</label>
-    <input type="checkbox" title="All Day" class="allday" />
+    <label>All Day <input type="checkbox" title="All Day" class="allday" /></label>
   </div>
   <div class="repeat-row row">
-    <label>Repeat</label>
-    <button class="repeat-settings-button" title="Repeat Settings">Repeat</button>
-    <div class="repeat-msg"></div>
+    <label>Repeat 
+      <input type="checkbox" title="Repeat" class="repeat" /> 
+      <span class="repeat-msg"></span> 
+    </label>
   </div>
   <div class="location-row row">
     <label>Location</label>
@@ -34,8 +37,5 @@
   <div class="description-row row">
     <label>Description</label>
     <textarea class="description"></textarea>
-  </div>
-  <div class="save-button-row row">
-    <button class="save-button" title="Save">Save</button>
   </div>
 </div>

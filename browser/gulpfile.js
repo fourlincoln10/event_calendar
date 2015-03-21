@@ -12,55 +12,34 @@ var tap = require("gulp-tap");
 var htmlclean = require("gulp-htmlclean");
 var path = require("path");
 var fs = require("fs");
-var beautify = require('js-beautify').js_beautify;
+var beautify = require("js-beautify").js_beautify;
 var templates = {};
-var buildJsPrefix = "./lib/js/";
-var buildJsFiles = [
-  buildJsPrefix + "global.js",
-  buildJsPrefix + "cfg.js",
-  buildJsPrefix + "errors.js",
-  buildJsPrefix + "helpers.js",
-  buildJsPrefix + "validate.js",
-  buildJsPrefix + "templates.js",
-  buildJsPrefix + "model.js"
-];
-var buildThirdPartyPrefix = "./lib/js/third_party";
-var buildThirdPartyJsFiles = [
-  buildThirdPartyPrefix + "/jquery-2.1.3.min.js",
-  buildThirdPartyPrefix + "/lodash-min.js",
-  buildThirdPartyPrefix + "/moment.min.js",
-  buildThirdPartyPrefix + "/fullcalendar-2.2.6/fullcalendar.min.js",
-  buildThirdPartyPrefix + "/ical.js/build/ical.js",
-  buildThirdPartyPrefix + "/jstz-1.0.4.min.js",
-  buildThirdPartyPrefix + "/kendo.custom.min.js",
-];
-
-gulp.task("lint", function () {
-  return gulp.src(["./lib/js/*.js"])
-             .pipe(jshint(".jshintrc"))
-             .pipe(jshint.reporter("jshint-stylish"));
-});
-
-gulp.task("build", ["lint", "write-templates"], function () {
-    return gulp.src(buildJsFiles)
-    .pipe(concat("event_calendar.js"))
-    .pipe(gulp.dest("./build"));
-});
-
-gulp.task("test", ["build"], function () {
-  return gulp.src("./test/*.js")
-             .pipe(mocha({ reporter: "list" }));
-});
 
 gulp.task("sass", function() {
-  return gulp.src("./lib/sass/*.scss")
-             .pipe(scsslint())
-             .pipe(sass({errLogToConsole: true}))
-             .pipe(gulp.dest("./lib/css"));
+  return gulp.src(["./lib/sass/*.scss"])
+   .pipe(scsslint())
+   .pipe(sass({errLogToConsole: true, outputStyle: "expanded"}))
+   .pipe(gulp.dest("./lib/css"));
 });
 
+gulp.task("move-kendo-files", function(){
+  return gulp.src(["./lib/js/third_party/kendo-ui-core/dist/styles/web/Default/*"])
+    .pipe(gulp.dest("./build/css/Default"));
+});
+
+gulp.task("build-css", gulp.series("sass", "move-kendo-files", function concat_css() {
+  return gulp.src([
+    "./lib/css/*.css",
+    "./lib/js/third_party/fullcalendar-2.2.6/fullcalendar.min.css",
+    "./lib/js/third_party/kendo-ui-core/dist/styles/web/kendo.common.core.css",
+    "./lib/js/third_party/kendo-ui-core/dist/styles/web/kendo.default.css"
+  ])
+  .pipe(concat("screen.css"))
+  .pipe(gulp.dest("./build/css"));
+}));
+
 gulp.task("load-templates", function() {
-  return gulp.src("./lib/templates/*.html")
+  return gulp.src(["./lib/templates/*.html"])
     .pipe(htmlclean())
     .pipe(tap(function(file) {
       var prop = path.basename(file.relative, ".html");
@@ -68,36 +47,75 @@ gulp.task("load-templates", function() {
     }));
 });
 
-gulp.task("write-templates", ["load-templates"], function() {
-  var stream = fs.createWriteStream("./lib/js/templates.js");
+gulp.task("write-templates", gulp.series("load-templates", function write_file(cb) {
   var pretty = beautify(JSON.stringify(templates), { indent_size: 2 });
   var str = "/**\n * Templates\n * @type {Object}  \n*/\nEvent_Calendar.Templates = " + pretty + ";\n";
-  stream.write(str);
-  stream.end();
+  fs.writeFileSync("./lib/js/templates.js", str);
+  cb();
+}));
+
+gulp.task("lint", function () {
+  return gulp.src(["./lib/js/*.js"])
+   .pipe(jshint(".jshintrc"))
+   .pipe(jshint.reporter("jshint-stylish"));
 });
+
+gulp.task("concat-third-party-js", function(){
+  return gulp.src([
+    "./lib/js/third_party/*.js",
+    "!./lib/js/third_party/ical.js",
+    "./lib/js/third_party/fullcalendar-2.2.6/fullcalendar.min.js",
+    "./lib/js/third_party/kendo-ui-core/dist/js/kendo.ui.core.min.js"
+  ])
+  .pipe(concat("lib.js"))
+  .pipe(gulp.dest("./build/js"));
+});
+
+gulp.task("concat-js", function(){
+  return gulp.src([
+    "./lib/js/global.js",
+    "./lib/js/cfg.js",
+    "./lib/js/errors.js",
+    "./lib/js/helpers.js",
+    "./lib/js/validate.js",
+    "./lib/js/templates.js",
+    "./lib/js/model.js",
+    "./lib/js/entry.js"
+  ])
+  .pipe(concat("event_calendar.js"))
+  .pipe(gulp.dest("./build/js"));
+});
+
+gulp.task("test", function () {
+  return gulp.src("./test/*.js")
+    .pipe(mocha({ reporter: "list" }));
+});
+
+gulp.task("build", gulp.series("build-css", "write-templates", "lint", "test", "concat-third-party-js", "concat-js"));
+
+gulp.task("move-js-to-test-site", function(){
+  return gulp.src(["./build/js/*.js"])
+    .pipe(gulp.dest("./test_site/js"));
+});
+
+gulp.task("move-css-to-test-site", function(){
+  return gulp.src(["./build/css/**/*"])
+    .pipe(gulp.dest("./test_site/css"));
+});
+
+gulp.task("build-all", gulp.series("build", "move-js-to-test-site", "move-css-to-test-site"));
 
 gulp.task("watch", function() {
-  gulp.watch("./lib/js/*.js", ["test"]);
-  gulp.watch("./lib/sass/*.scss", ["sass"]);
+  var files = [
+    "./lib/js/*.js",
+    "!./lib/js/templates.js", // ignore templates.js
+    "./lib/templates/*.html",
+    "./lib/sass/*.scss"
+  ];
+  gulp.watch(files, "build-all");
 });
 
-gulp.task("build-test-site", ["sass"], function () {
-    gulp.src(buildJsFiles)
-        .pipe(concat("event_calendar.js"))
-        .pipe(gulp.dest("./test_site/js"));
-    gulp.src(buildThirdPartyJsFiles)
-        .pipe(concat("lib.js"))
-        .pipe(gulp.dest("./test_site/js"));
-    gulp.src("./lib/js/third_party/fullcalendar-2.2.6/fullcalendar.min.css")
-        .pipe(gulp.dest("./test_site/css"));
-    return gulp.src("./lib/css/*.css")
-               .pipe(gulp.dest("./test_site/css"));
-});
 
-gulp.task("watch-test-site", function() {
-  gulp.watch("./lib/js/*.js", ["build-test-site"]);
-  gulp.watch("./lib/sass/*.scss", ["build-test-site"]);
-  gulp.watch("./lib/templates/*.html", ["write-templates", "build-test-site"]);
-});
+
 
 
