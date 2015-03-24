@@ -72,6 +72,7 @@ gulp.task("concat-third-party-js", function(){
 });
 
 gulp.task("concat-js", function(){
+  // Leave this as a list so the files are concatenated in the given order
   return gulp.src([
     "./lib/js/global.js",
     "./lib/js/cfg.js",
@@ -80,7 +81,9 @@ gulp.task("concat-js", function(){
     "./lib/js/validate.js",
     "./lib/js/templates.js",
     "./lib/js/model.js",
-    "./lib/js/entry.js"
+    "./lib/js/entry.js",
+    "./lib/js/basic_inputs.js",
+    "./lib/js/repeat_settings.js"
   ])
   .pipe(concat("event_calendar.js"))
   .pipe(gulp.dest("./build/js"));

@@ -1,4 +1,4 @@
-<mockup version="1.0" skin="sketch" fontFace="Balsamiq Sans" measuredW="3327" measuredH="1116" mockupW="3278" mockupH="1116">
+<mockup version="1.0" skin="sketch" fontFace="Balsamiq Sans" measuredW="2845" measuredH="1116" mockupW="2796" mockupH="1116">
   <controls>
     <control controlID="0" controlTypeID="com.balsamiq.mockups::Canvas" x="49" y="642" w="286" h="298" measuredW="100" measuredH="70" zOrder="8" locked="false" isInGroup="-1"/>
     <control controlID="2" controlTypeID="com.balsamiq.mockups::DateChooser" x="154" y="772" w="114" h="-1" measuredW="127" measuredH="25" zOrder="11" locked="false" isInGroup="-1">
@@ -1503,7 +1503,7 @@
         </control>
       </groupChildrenDescriptors>
     </control>
-    <control controlID="441" controlTypeID="__group__" x="2831" y="0" w="496" h="528" measuredW="496" measuredH="528" zOrder="120" locked="false" isInGroup="-1">
+    <control controlID="441" controlTypeID="__group__" x="2349" y="39" w="496" h="528" measuredW="496" measuredH="528" zOrder="120" locked="false" isInGroup="-1">
       <groupChildrenDescriptors>
         <control controlID="0" controlTypeID="com.balsamiq.mockups::BrowserWindow" x="0" y="0" w="496" h="528" measuredW="450" measuredH="400" zOrder="0" locked="false" isInGroup="441"/>
         <control controlID="1" controlTypeID="com.balsamiq.mockups::TextInput" x="90" y="107" w="344" h="-1" measuredW="99" measuredH="27" zOrder="1" locked="false" isInGroup="441">
@@ -1594,10 +1594,16 @@
         </control>
       </groupChildrenDescriptors>
     </control>
-    <control controlID="442" controlTypeID="com.balsamiq.mockups::Label" x="1388" y="0" w="-1" h="-1" measuredW="450" measuredH="32" zOrder="123" locked="false" isInGroup="-1">
+    <control controlID="442" controlTypeID="com.balsamiq.mockups::Label" x="1383" y="7" w="-1" h="-1" measuredW="450" measuredH="32" zOrder="123" locked="false" isInGroup="-1">
       <controlProperties>
         <size>24</size>
         <text>Event%20detail%20page%20-%20With%20Repeat%20Settings</text>
+      </controlProperties>
+    </control>
+    <control controlID="443" controlTypeID="com.balsamiq.mockups::Label" x="2416" y="0" w="-1" h="-1" measuredW="362" measuredH="32" zOrder="124" locked="false" isInGroup="-1">
+      <controlProperties>
+        <size>24</size>
+        <text>Event%20detail%20page%20-%20Button%20choice</text>
       </controlProperties>
     </control>
   </controls>

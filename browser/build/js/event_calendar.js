@@ -299,10 +299,11 @@ Event_Calendar.Validate = {
  * @type {Object}  
 */
 Event_Calendar.Templates = {
-  "entry_inputs": "<div class=\"edit-event-container\"><div class=\"save-button-row row\"> <button class=\"save-button\" title=\"Save\">Save</button></div><div class=\"title-row row\"> <label>Title</label> <input type=\"text\" title=\"Event Title\" class=\"summary\" /></div><div class=\"date-row row\"> <label>Start/End</label> <span class=\"dtstart-group\"><span class=\"dtstart-prefix prefix\">From</span> <input type=\"date\" title=\"From Date\" class=\"dtstart-date\" /> <span class=\"dtstart-separator separator\">at</span> <input type=\"time\" title=\"From Time\" class=\"dtstart-time\" /></span> <span class=\"dtend-group\"><span class=\"dtend-prefix prefix\">To</span> <input type=\"date\" title=\"To Date\" class=\"dtend-date\" /> <span class=\"dtend-separator separator\">at</span> <input type=\"time\" title=\"To Time\" class=\"dtend-time\" /></span></div><div class=\"allday-row row\"> <label>All Day <input type=\"checkbox\" title=\"All Day\" class=\"allday\" /></label></div><div class=\"repeat-row row\"> <label>Repeat <input type=\"checkbox\" title=\"Repeat\" class=\"repeat\" /><span class=\"repeat-msg\"></span></label></div><div class=\"location-row row\"> <label>Location</label> <input type=\"text\" title=\"Event Location\" class=\"location\" /></div><div class=\"description-row row\"> <label>Description</label><textarea class=\"description\"></textarea></div></div>",
+  "basic_inputs": "<div class=\"basic-inputs\"><div class=\"save-button-row row\"> <button class=\"save-button\" title=\"Save\">Save</button></div><div class=\"title-row row\"> <label>Title</label> <input type=\"text\" title=\"Event Title\" class=\"summary\" /></div><div class=\"date-row row\"> <label>Start/End</label> <span class=\"dtstart-group\"><span class=\"dtstart-prefix prefix\">From</span> <input type=\"date\" title=\"From Date\" class=\"dtstart-date\" /> <span class=\"dtstart-separator separator\">at</span> <input type=\"time\" title=\"From Time\" class=\"dtstart-time\" /></span> <span class=\"dtend-group\"><span class=\"dtend-prefix prefix\">To</span> <input type=\"date\" title=\"To Date\" class=\"dtend-date\" /> <span class=\"dtend-separator separator\">at</span> <input type=\"time\" title=\"To Time\" class=\"dtend-time\" /></span></div><div class=\"allday-row row\"> <label>All Day <input type=\"checkbox\" title=\"All Day\" class=\"allday\" /></label></div><div class=\"repeat-row row\"> <label>Repeat <input type=\"checkbox\" title=\"Repeat\" class=\"repeat\" /><span class=\"repeat-msg\"></span></label></div><div class=\"location-row row\"> <label>Location</label> <input type=\"text\" title=\"Event Location\" class=\"location\" /></div><div class=\"description-row row\"> <label>Description</label><textarea class=\"description\"></textarea></div></div>",
+  "entry_container": "<div class=\"edit-event-container\"><div class=\"basic-inputs-container\"></div><div class=\"repeat-settings-container\"></div></div>",
   "monthly_freq_day_of_week": "<div class='monthday-row row'> <label>On:<a class='inlineHelp' data-help='Select \"Day\" and one of the days of the month if the event needs to repeat on one or more days of the month e.g. the 1st and the 15th. Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third, fourth or last day of the week. A drop down menu will appear to the right so you can choose the day of the week.'><i class='icon-question-sign'></i></a></label> <select class='monthday-occurrence-number'><option value='day'>Day</option><option value='' disabled='disabled'></option><option value='1'>First</option><option value='2'>Second</option><option value='3'>Third</option><option value='4'>Fourth</option><option value='-1'>Last</option></select><div class='monthday-container'><div class='select-container'> <select class='month-day-dropdown'><option value='su'>Sunday</option><option value='mo'>Monday</option><option value='tu'>Tuesday</option><option value='we'>Wednesday</option><option value='th'>Thursday</option><option value='fr'>Friday</option><option value='sa'>Saturday</option><option value='' disabled='disabled'></option><option value='day'>Day</option><option value='weekday'>Weekday</option><option value='weekendday'>Weekend Day</option></select></div></div></div>",
   "monthly_freq_numeric_day": "<div class='monthday-row row'> <label>On:<a class='inlineHelp' data-help='Select \"Day\" and one of the days of the month if the event needs to repeat on one or more days of the month e.g. the 1st and the 15th. Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third, fourth or last day of the week. A drop down menu will appear to the right so you can choose the day of the week.'><i class='icon-question-sign'></i></a></label> <select class='monthday-occurrence-number'><option value='day'>Day</option><option value='' disabled='disabled'></option><option value='1'>First</option><option value='2'>Second</option><option value='3'>Third</option><option value='4'>Fourth</option><option value='-1'>Last</option></select><div class='monthday-container'><div class='pushbutton-container'></div></div></div>",
-  "persistent_repeat_inputs": "<div class='freq-row row'> <label>Repeats:<a class='inlineHelp' data-help='The unit of time used to determine how often the event should repeat e.g. monthly. Defaults to \"never\".'><i class='icon-question-sign'></i></a></label></label> <select class='freq'><option value='daily'>Daily</option><option value='weekly'>Weekly</option><option value='monthly'>Monthly</option><option value='yearly'>Yearly</option></select><div class='nextOccurrence'></div></div><div class='interval-row row'> <label>Every:<a class='inlineHelp' data-help='This value works with the \"repeats\" unit of time to determine how often the event will repeat e.g. 2 with \"monthly\" means every 2 months. Defaults to 1 if you leave this blank.'><i class='icon-question-sign'></i></a></label></label> <input type='number' class='interval' min='1'/><span class='intervalTimeUnit'></span></div><div class='dtstart-row row'> <label>Starting:<a class='inlineHelp' data-help='The date and time the event starts repeating. You should make this the date and time you want the event to initially appear.'><i class='icon-question-sign'></i></a></label> <input type='text' class='dtstart' /></div><div class='end-row row'> <label>Ending:<a class='inlineHelp' data-help='These buttons allow you to choose when the event should stop repeating. Choose \"After\" if you want to limit the event to a certain number of occurrences. Choose \"Until\" if you want the event to stop repeating on a specific date and time.'><i class='icon-question-sign'></i></a></label><div class=\"end-type\"> <label><input type=\"radio\" class=\"never-rb\" /> Never</label> <label><input type=\"radio\" class=\"count-rb\" /> After <input type=\"number\" class=\"count\" min=\"1\"/> occurrence(s)</label> <label><input type=\"radio\" class=\"until-rb\" /> On <input type=\"text\" class=\"until\"/></label></div></div><div class=\"repeat-settings\"></div><div class='button-row row'> <button class='ok'>Ok</button> &nbsp; <button class='cancel'>Cancel</button></div>",
+  "persistent_repeat_inputs": "<div><button class=\"close\">&#xd7;</button></div><h3 class=\"title\">Repeat Settings</h3><div class='freq-row row'> <label>Repeats:<a class='inlineHelp' data-help='The unit of time used to determine how often the event should repeat e.g. monthly. Defaults to \"never\".'><i class='icon-question-sign'></i></a></label></label> <select class='freq'><option value='daily'>Daily</option><option value='weekly'>Weekly</option><option value='monthly'>Monthly</option><option value='yearly'>Yearly</option></select><div class='nextOccurrence'></div></div><div class='interval-row row'> <label>Every:<a class='inlineHelp' data-help='This value works with the \"repeats\" unit of time to determine how often the event will repeat e.g. 2 with \"monthly\" means every 2 months. Defaults to 1 if you leave this blank.'><i class='icon-question-sign'></i></a></label></label> <input type='number' class='interval' min='1'/><span class='intervalTimeUnit'></span></div><div class='dtstart-row row'> <label>Starting:<a class='inlineHelp' data-help='The date and time the event starts repeating. You should make this the date and time you want the event to initially appear.'><i class='icon-question-sign'></i></a></label> <input type='text' class='dtstart' /></div><div class='end-row row'> <label>Ending:<a class='inlineHelp' data-help='These buttons allow you to choose when the event should stop repeating. Choose \"After\" if you want to limit the event to a certain number of occurrences. Choose \"Until\" if you want the event to stop repeating on a specific date and time.'><i class='icon-question-sign'></i></a></label><div class=\"end-type\"> <label><input type=\"radio\" class=\"never-rb\" /> Never</label> <label><input type=\"radio\" class=\"count-rb\" /> After <input type=\"number\" class=\"count\" min=\"1\"/> occurrence(s)</label> <label><input type=\"radio\" class=\"until-rb\" /> On <input type=\"text\" class=\"until\"/></label></div></div><div class=\"repeat-settings\"></div><div class='button-row row'> <button class='ok'>Ok</button> &nbsp; <button class='cancel'>Cancel</button></div>",
   "quick_entry_inputs": "<div class=\"dtstart-group\"><h2>Start Date</h2><div class=\"dtstart-inputs\"> <input class=\"ds-date\" title=\"From date\"> <input class=\"ds-time\" title=\"From time\"></div></div><div class=\"dtend-group\"><h2>End Date</h2><div class=\"dtend-inputs\"> <input class=\"de-date\" title=\"End date\"> <input class=\"de-time\" title=\"End time\"></div></div><div class=\"summary-group\"><h2>Summary</h2><div class=\"summary\"><textarea class=\"summary\"></textarea></div></div><div class=\"submit-button\"></div>",
   "weekly_freq_day_of_week": "<div class='weekday-row row'> <label>On:<a class='inlineHelp' data-help='Use this value if the event needs to repeat on one or more days of the week e.g. Monday and Wednesday.'><i class='icon-question-sign'></i></a></label><div class='weekDayContainer'></div></div>",
   "yearly_freq_month_selection": "<div class='year-month-row row'> <label>In:<a class='inlineHelp' data-help='You can limit the months the event will repeat in by selecting one or more months.'><i class='icon-question-sign'></i></a></label><div class='year-month-container'></div></div><div class='year-day-row row'> <label>On:<a class='inlineHelp' data-help='Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third fourth or last day of the week that will appear in a drop down menu to the right.'><i class='icon-question-sign'></i></a></label> <select class='yearday-occurrence-number'><option value=''></option><option value='1'>First</option><option value='2'>Second</option><option value='3'>Third</option><option value='4'>Fourth</option><option value='-1'>Last</option></select> <select class='yearday-drop-down'><option value='su'>Sunday</option><option value='mo'>Monday</option><option value='tu'>Tuesday</option><option value='we'>Wednesday</option><option value='th'>Thursday</option><option value='fr'>Friday</option><option value='sa'>Saturday</option><option value='' disabled='disabled'></option><option value='day'>Day</option><option value='weekday'>Weekday</option><option value='weekendday'>Weekend Day</option></select></div>"
@@ -459,27 +460,37 @@ Event_Calendar.Model = (function(){
 })();
 
 /**
- * Event Entry Form
- * @return {Function} Model contructor function
+ * Event Entry Controller
  */
 Event_Calendar.Entry = (function(){
   "use strict";
 
-  var container, model;
+  var model,
+      container,
+      bi,
+      rs;
 
   /**
    * Event Entry Constructor
    * @param {Object} evt An object containing event properties
    */
-  function Entry(containerSelector, evt) {
+  function Entry(containerSelector, values) {
     container = $(containerSelector);
-    model = new Event_Calendar.Model(evt);
+    if(container.length === 0) {
+      throw new Error("Entry(): Unable to locate container");
+    }
+    model = new Event_Calendar.Model(values);
+    container.html(Event_Calendar.Templates.entry_container);
+    bi = new Event_Calendar.Basic_Inputs(".basic-inputs-container", this);
+    bi.render(values);
+    rs = new Event_Calendar.Repeat_Settings(".repeat-settings-container", this);
+    rs.render();
   }
 
-  function initEvent() {
-    container.off();
-
-  }
+  /**
+   * Private Functions
+   */
+  
 
   /**
    * API 
@@ -489,20 +500,256 @@ Event_Calendar.Entry = (function(){
     /**
      * Render inputs
      */
-    render : function render() {
-      container.html(Event_Calendar.Templates.entry_inputs);
-      var dtstart = model.getProperty(dtstart) ? new Date(model.getProperty(dtstart)) : 
-                                                 new Date();
-      $(".dtstart-date", container).kendoDatePicker({
-        value : dtstart,
-        parseFormats: ["MM/dd/yyyy"],
-        min: new Date("01/01/1970")
-      });
-      //initEvents();
+    setEvent : function setEvent(values) {
+      var res = model.setEvent(values);
+      if(res instanceof Error) {
+        // Pass errors to all views
+      }
+      else {
+        return true;
+      }
+    },
+
+    toggleRepeatSettings : function toggleRepeatSettings(evt){
+      rs.toggleRepeatSettings(evt);
     }
+    
     
   };
 
   return Entry;
+
+})();
+
+/**
+ * Event Basic Inputs
+ * @return {Function} Model contructor function
+ */
+Event_Calendar.Basic_Inputs = (function(){
+  "use strict";
+
+  var controller,
+      container,
+      summaryInput,
+      dtstartDateInput,
+      dtstartTimeInput,
+      dtendDateInput,
+      dtendTimeInput,
+      allDayInput,
+      repeatInput,
+      locationInput,
+      descriptionInput;
+
+  /**
+   * Basic Inputs Constructor
+   * @param {Object} evt An object containing event properties
+   */
+  function Basic_Inputs(containerSelector, contr) {
+    container = $(containerSelector);
+    if(container.length === 0) {
+      throw new Error("Basic_Inputs(): Unable to locate container");
+    }
+    controller = contr;
+  }
+
+  /**
+   * Private Functions
+   */
+  function initInputReferences() {
+    summaryInput = $("input.summary", container);
+    dtstartDateInput = $("input.dtstart-date", container);
+    dtendDateInput = $("input.dtend-date", container);
+    dtstartTimeInput = $("input.dtstart-time", container);
+    dtendTimeInput = $("input.dtend-time", container);
+    allDayInput = $("input.allday", container);
+    repeatInput = $("input.repeat", container);
+    locationInput = $("input.location", container);
+    descriptionInput = $("textarea.description", container);
+  }
+
+  // TODO: Account for timezones!
+  function calculateInitDates(values) {
+    var dtstartDate, dtstartTime, dtendDate, dtendTime;
+    // dtstart
+    if(values.dtstart) {
+      dtstartDate = moment(values.dtstart).format("MM-DD-YYYY");
+      dtstartTime = moment(values.dtstart).format("hh:mm A");
+    }
+    else {
+      var coeff = 1000 * 60 * 30;
+      dtstartDate = moment().format("MM-DD-YYYY");
+      dtstartTime = moment(Math.round(new Date().getTime() / coeff) * coeff).format("hh:mm A"); // rounds to nearest 30mins
+    }
+    // dtend
+    if(values.dtend) {
+      dtendDate = moment(values.dtend).format("MM-DD-YYYY");
+      dtendTime = moment(values.dtend).format("hh:mm A");
+    }
+    else {
+      dtendDate = dtstartDate;
+      var strDt = dtstartDate + " " + dtstartTime;
+      var format = "MM-DD-YYYY hh:mm A";
+      dtendTime = moment(strDt, format).add(1, "hour").format("hh:mm A");
+    }
+    return {
+      dtstartDate : dtstartDate,
+      dtstartTime : dtstartTime,
+      dtendDate : dtendDate,
+      dtendTime : dtendTime
+    };
+  }
+
+  function initInputs(values) {
+    initInputReferences();
+    var dates = calculateInitDates(values);
+    if(!Modernizr.touch || !Modernizr.inputtypes.date) {
+      // Date pickers
+      var dtOpts = {
+        value: new Date(dates.dtstartDate),
+        parseFormats: ["MM/dd/yyyy"],
+        min: new Date("01/01/1970")
+      };
+      dtstartDateInput.attr("type", "text").kendoDatePicker(dtOpts);
+      dtOpts.value = new Date(dates.dtendDate);
+      dtendDateInput.attr("type", "text").kendoDatePicker(dtOpts);
+      // Time pickers
+      dtstartTimeInput.attr("type", "text").kendoTimePicker({
+        value : dates.dtstartTime
+      });
+      dtendTimeInput.attr("type", "text").kendoTimePicker({
+        value : dates.dtendTime
+      });
+    }
+    else {
+      dtstartDateInput[0].valueAsDate = dates.dtstartDate;
+      dtendDateInput.valueAsDate = dates.dtendDate;
+      dtstartTimeInput[0].value = dates.dtstartTime;
+      dtendTimeInput[0].value = dates.dtendTime;
+    }
+  }
+
+  function initEvents() {
+    repeatInput.off().on("click", function(evt){controller.toggleRepeatSettings(evt);});
+  }
+
+  /**
+   * API 
+   */
+  Basic_Inputs.prototype = {
+
+    /**
+     * Render inputs
+     */
+    render : function render(values) {
+      values = values || {};
+      container.html(Event_Calendar.Templates.basic_inputs);
+      initInputs(values);
+      initEvents();
+    }
+    
+    
+  };
+
+  return Basic_Inputs;
+
+})();
+
+/**
+ * Event Repeat Settings
+ * @return {Function} Repeat settings constructor function
+ */
+Event_Calendar.Repeat_Settings = (function(){
+  "use strict";
+
+  var container,
+      controller,
+      rsChoice,
+      rsContainer,
+      smScreenBreakPoint = 550;
+
+  /**
+   * Constructor
+   * @param {Object} evt An object containing event properties
+   */
+  function Repeat_Settings(containerSelector, cont) {
+    container = $(containerSelector);
+    if(container.length === 0) {
+      throw new Error("Basic_Inputs(): Unable to locate container");
+    }
+    controller = cont;
+  }
+
+  /**
+   * Private Functions
+   */
+  
+  function initInputs() {
+    
+  }
+
+  function initEvents() {
+    
+  }
+
+  function toggleRsWindow(evt) {
+    console.log("toggleRsWindow()");
+    var wind = container,
+        closeWindowBtn = $( "button.close", wind),
+        showWindowClass = "rs-window-show",
+        transEndEventNames = {
+          "WebkitTransition" : "webkitTransitionEnd",
+          "MozTransition" : "transitionend",
+          "OTransition" : "oTransitionEnd",
+          "msTransition" : "MSTransitionEnd",
+          "transition" : "transitionend"
+        },
+        transEndEventName = transEndEventNames[ Modernizr.prefixed( "transition" ) ],
+        support = { transitions : Modernizr.csstransitions };
+
+    wind.addClass( "rs-window" );
+    closeWindowBtn.off().on("click", toggleRsWindow);
+    
+    function onEndTransitionFn( evt ) {
+      if( evt.originalEvent.propertyName !== "visibility" ) return;
+      wind.off( transEndEventName, onEndTransitionFn );
+      wind.removeClass( showWindowClass );
+    }
+
+    if(wind.hasClass( showWindowClass ) ) {
+      wind.removeClass( showWindowClass );
+      if( support.transitions ) {
+        wind.off().on( transEndEventName, onEndTransitionFn );
+      }
+      else {
+        wind.removeClass( showWindowClass );
+      }
+    }
+    else {
+      wind.addClass( showWindowClass );
+    }
+  }
+
+  function toggleRsOverlay(evt) {
+
+  }
+
+  /**
+   * API 
+   */
+  Repeat_Settings.prototype = {
+    render : function render(values) {
+      values = values || {};
+      container.html(Event_Calendar.Templates.persistent_repeat_inputs);
+      initInputs(values);
+      initEvents();
+    },
+
+    toggleRepeatSettings : function toggleRepeatSettings(evt) {
+      var viewportWidth = document.documentElement.clientWidth;
+      return viewportWidth > smScreenBreakPoint ? toggleRsWindow(evt) : toggleRsOverlay(evt);
+    }
+  };
+
+  return Repeat_Settings;
 
 })();

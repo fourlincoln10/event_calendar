@@ -1,25 +1,35 @@
 /**
- * Event Entry Form
- * @return {Function} Model contructor function
+ * Event Entry Controller
  */
 Event_Calendar.Entry = (function(){
   "use strict";
 
-  var container, model;
+  var model,
+      container,
+      bi,
+      rs;
 
   /**
    * Event Entry Constructor
    * @param {Object} evt An object containing event properties
    */
-  function Entry(containerSelector, evt) {
+  function Entry(containerSelector, values) {
     container = $(containerSelector);
-    model = new Event_Calendar.Model(evt);
+    if(container.length === 0) {
+      throw new Error("Entry(): Unable to locate container");
+    }
+    model = new Event_Calendar.Model(values);
+    container.html(Event_Calendar.Templates.entry_container);
+    bi = new Event_Calendar.Basic_Inputs(".basic-inputs-container", this);
+    bi.render(values);
+    rs = new Event_Calendar.Repeat_Settings(".repeat-settings-container", this);
+    rs.render();
   }
 
-  function initEvent() {
-    container.off();
-
-  }
+  /**
+   * Private Functions
+   */
+  
 
   /**
    * API 
@@ -29,17 +39,20 @@ Event_Calendar.Entry = (function(){
     /**
      * Render inputs
      */
-    render : function render() {
-      container.html(Event_Calendar.Templates.entry_inputs);
-      var dtstart = model.getProperty(dtstart) ? new Date(model.getProperty(dtstart)) : 
-                                                 new Date();
-      $(".dtstart-date", container).kendoDatePicker({
-        value : dtstart,
-        parseFormats: ["MM/dd/yyyy"],
-        min: new Date("01/01/1970")
-      });
-      //initEvents();
+    setEvent : function setEvent(values) {
+      var res = model.setEvent(values);
+      if(res instanceof Error) {
+        // Pass errors to all views
+      }
+      else {
+        return true;
+      }
+    },
+
+    toggleRepeatSettings : function toggleRepeatSettings(evt){
+      rs.toggleRepeatSettings(evt);
     }
+    
     
   };
 
