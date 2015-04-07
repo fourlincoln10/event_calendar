@@ -28,11 +28,16 @@ Event_Calendar.Repeat_Settings = (function(){
    */
   
   function initInputs() {
-    
+    addAppropriateModalClass();
   }
 
   function initEvents() {
-    
+    // Add appropriate modal class when resize ends
+    $(window).off("resize").on("resize", _.debounce(function(){
+      addAppropriateModalClass();
+    }, 500));
+    // Close button
+    $( ".close", container).off().on("click", toggleModal);
   }
 
   function supportsTransitions() {
@@ -53,17 +58,12 @@ Event_Calendar.Repeat_Settings = (function(){
 
   function toggleModal(evt) {
     var modal = container,
-        closeButton = $( ".close", modal),
-        slidedownClass = "modal-slidedown",
         showClass = "show";
-
-    closeButton.off().on("click", toggleModal);
 
     if(modal.hasClass( showClass ) ) {
       modal.removeClass( showClass );
     }
     else {
-      addAppropriateModalClass();
       modal.addClass( showClass );
     }
   }

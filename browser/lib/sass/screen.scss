@@ -108,13 +108,14 @@ $sans-serif-font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
 
 .modal-slidedown {
 
-  position: fixed;
+  position: absolute;
   width: 100%;
   height: 100%;
+  left: 0;
   top: -100%;
   left: 0;
   background: rgba(153,204,51,0.9);
-  -webkit-transition: -webkit-transform 0.4s ease-in-out;
+  -webkit-transition: -webkit-transform 0.4s ease-in-out, visibility 0.4s;
   transition: transform 0.4s ease-in-out, visibility 0.4s;
 
   .close {
