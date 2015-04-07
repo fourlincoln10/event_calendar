@@ -35,46 +35,37 @@ Event_Calendar.Repeat_Settings = (function(){
     
   }
 
-  function toggleRsWindow(evt) {
-    console.log("toggleRsWindow()");
-    var wind = container,
-        closeWindowBtn = $( "button.close", wind),
-        showWindowClass = "rs-window-show",
-        transEndEventNames = {
-          "WebkitTransition" : "webkitTransitionEnd",
-          "MozTransition" : "transitionend",
-          "OTransition" : "oTransitionEnd",
-          "msTransition" : "MSTransitionEnd",
-          "transition" : "transitionend"
-        },
-        transEndEventName = transEndEventNames[ Modernizr.prefixed( "transition" ) ],
-        support = { transitions : Modernizr.csstransitions };
+  function supportsTransitions() {
+    return Modernizr.csstransitions;
+  }
 
-    wind.addClass( "rs-window" );
-    closeWindowBtn.off().on("click", toggleRsWindow);
-    
-    function onEndTransitionFn( evt ) {
-      if( evt.originalEvent.propertyName !== "visibility" ) return;
-      wind.off( transEndEventName, onEndTransitionFn );
-      wind.removeClass( showWindowClass );
-    }
-
-    if(wind.hasClass( showWindowClass ) ) {
-      wind.removeClass( showWindowClass );
-      if( support.transitions ) {
-        wind.off().on( transEndEventName, onEndTransitionFn );
-      }
-      else {
-        wind.removeClass( showWindowClass );
-      }
-    }
-    else {
-      wind.addClass( showWindowClass );
+  function addAppropriateModalClass() {
+    var modal = container,
+        windowClass = "modal-window",
+        slidedownClass = "modal-slidedown",
+        viewportWidth = document.documentElement.clientWidth;
+    if( viewportWidth > smScreenBreakPoint ) {
+      modal.removeClass(slidedownClass).addClass(windowClass);
+    } else {
+      modal.removeClass(windowClass).addClass(slidedownClass);
     }
   }
 
-  function toggleRsOverlay(evt) {
+  function toggleModal(evt) {
+    var modal = container,
+        closeButton = $( ".close", modal),
+        slidedownClass = "modal-slidedown",
+        showClass = "show";
 
+    closeButton.off().on("click", toggleModal);
+
+    if(modal.hasClass( showClass ) ) {
+      modal.removeClass( showClass );
+    }
+    else {
+      addAppropriateModalClass();
+      modal.addClass( showClass );
+    }
   }
 
   /**
@@ -84,13 +75,13 @@ Event_Calendar.Repeat_Settings = (function(){
     render : function render(values) {
       values = values || {};
       container.html(Event_Calendar.Templates.persistent_repeat_inputs);
+      addAppropriateModalClass();
       initInputs(values);
       initEvents();
     },
 
     toggleRepeatSettings : function toggleRepeatSettings(evt) {
-      var viewportWidth = document.documentElement.clientWidth;
-      return viewportWidth > smScreenBreakPoint ? toggleRsWindow(evt) : toggleRsOverlay(evt);
+      toggleModal(evt);
     }
   };
 

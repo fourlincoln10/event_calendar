@@ -17,6 +17,5 @@ test_site
 
 # Files #
 ######################
-ce.html
 scratchpad*.*
 test_results.json

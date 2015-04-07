@@ -115,7 +115,7 @@ gulp.task("watch", function() {
     "./lib/templates/*.html",
     "./lib/sass/*.scss"
   ];
-  gulp.watch(files, "build-all");
+  gulp.watch(files, gulp.parallel("build-all"));
 });
 
 
