@@ -52,6 +52,18 @@
     font-size: 1.1em; }
   .edit-event-container .repeat-settings-container {
     visibility: hidden; }
+    .edit-event-container .repeat-settings-container label {
+      font-weight: normal; }
+    .edit-event-container .repeat-settings-container .interval-row input {
+      width: 2em; }
+    .edit-event-container .repeat-settings-container .interval, .edit-event-container .repeat-settings-container .count {
+      width: 2em; }
+    .edit-event-container .repeat-settings-container .end-row .prefix {
+      text-align: left; }
+    .edit-event-container .repeat-settings-container .end-row .suffix {
+      display: inline; }
+    .edit-event-container .repeat-settings-container .end-row input {
+      display: inline; }
 
 .modal-slidedown {
   position: absolute;
@@ -60,13 +72,13 @@
   left: 0;
   top: -100%;
   left: 0;
-  background: rgba(153, 204, 51, 0.9);
+  background: #7EC0EE;
   -webkit-transition: -webkit-transform 0.4s ease-in-out, visibility 0.4s;
   transition: transform 0.4s ease-in-out, visibility 0.4s; }
   .modal-slidedown .close {
-    font-size: 44px;
-    width: 45px;
-    height: 45px;
+    font-size: 35px;
+    width: 35px;
+    height: 35px;
     position: absolute;
     right: 0;
     top: 0;
@@ -86,6 +98,33 @@
 .modal-slidedown .content {
   padding: 20px 7px 0 20px; }
 
+.modal-slidedown .title {
+  display: none; }
+
+.modal-slidedown input {
+  font-size: 1.1em;
+  height: 20px;
+  line-height: 20px; }
+
+.modal-slidedown select {
+  font-size: 1.1em; }
+
+.modal-slidedown label {
+  padding-bottom: 5px;
+  text-transform: uppercase;
+  color: #033C63; }
+
+.modal-slidedown .end-type input[type=radio] {
+  height: auto;
+  line-height: auto; }
+
+.modal-slidedown .end-type label {
+  text-transform: none; }
+
+.modal-slidedown .end-type label:not(:last-child) {
+  margin-bottom: 1em;
+  padding-bottom: 0; }
+
 .modal-window {
   position: absolute;
   top: 5%;
@@ -93,7 +132,7 @@
   -webkit-transform: translateX(-50%) scale(0);
   transform: translateX(-50%) scale(0);
   width: 50%;
-  max-width: 630px;
+  max-width: 550px;
   min-width: 400px;
   height: auto;
   background: #fff;
@@ -173,4 +212,10 @@
     line-height: 1em;
     max-width: 528px; }
   .edit-event-container button {
-    font-size: 1em; } }
+    font-size: 1em; }
+  .repeat-settings-container {
+    visibility: hidden; }
+    .repeat-settings-container label {
+      display: inline-block;
+      width: 15%;
+      font-weight: normal; } }

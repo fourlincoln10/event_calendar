@@ -93,13 +93,40 @@ $sans-serif-font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
 
   .repeat-settings-container {
     visibility: hidden;
+
+    label {
+      font-weight: normal;
+    }
+
+    .interval-row input {
+      width: 2em;
+    }
+
+    .interval, .count {
+      width: 2em;
+    }
+
+    .end-row {
+
+      .prefix {
+        text-align: left;
+      }
+      .suffix {
+        display: inline;
+      }
+      input {
+        display: inline;
+      }
+
+    }
+    
   }
 
 }
 
 // ---------------------------------------
 // 
-// Repeat settings modal styles
+// Modal styles
 // 
 // ---------------------------------------
 
@@ -114,14 +141,14 @@ $sans-serif-font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   left: 0;
   top: -100%;
   left: 0;
-  background: rgba(153,204,51,0.9);
+  background: #7EC0EE;
   -webkit-transition: -webkit-transform 0.4s ease-in-out, visibility 0.4s;
   transition: transform 0.4s ease-in-out, visibility 0.4s;
 
   .close {
-    font-size: 44px;
-    width: 45px;
-    height: 45px;
+    font-size: 35px;
+    width: 35px;
+    height: 35px;
     position: absolute;
     right: 0;
     top: 0;
@@ -146,6 +173,40 @@ $sans-serif-font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   padding: 20px 7px 0 20px;
 }
 
+.modal-slidedown .title {
+  display: none;
+}
+
+.modal-slidedown input {
+  font-size: 1.1em;
+  height: 20px;
+  line-height: 20px;
+}
+
+.modal-slidedown select {
+  font-size: 1.1em;
+}
+
+.modal-slidedown label {
+  padding-bottom: 5px;
+  text-transform: uppercase;
+  color: #033C63;;
+}
+
+
+.modal-slidedown .end-type input[type=radio] {
+  height: auto;
+  line-height: auto;
+}
+
+.modal-slidedown .end-type label {
+  text-transform: none;
+}
+.modal-slidedown .end-type label:not(:last-child) {
+  margin-bottom: 1em;
+  padding-bottom: 0;
+}
+
 // This was a serious pain in the &*% to figure out.
 // For this to work, the container element this is applied to,
 // .repeat-settings-container, has to have visibility: hidden;
@@ -165,7 +226,7 @@ $sans-serif-font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   -webkit-transform: translateX(-50%) scale(0);
   transform: translateX(-50%) scale(0);
   width: 50%;
-  max-width: 630px;
+  max-width: 550px;
   min-width: 400px;
   height: auto;
   background: #fff;
@@ -202,8 +263,8 @@ $sans-serif-font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
 
 // ---------------------------------------
 // 
-// Small screen breakpoint
-// min: If device width is >= width then ...
+// Large screen breakpoint
+// min means if device width is >= width then ...
 // 
 // ---------------------------------------
 
@@ -298,6 +359,18 @@ $sans-serif-font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
     button {
       font-size: 1em;
     }
+
+  }
+
+  .repeat-settings-container {
+    visibility: hidden;
+    
+    label {
+      display: inline-block;
+      width: 15%;
+      font-weight: normal;
+    }
+
   }
 
 }
