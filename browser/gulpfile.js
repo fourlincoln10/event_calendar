@@ -83,7 +83,8 @@ gulp.task("concat-js", function(){
     "./lib/js/model.js",
     "./lib/js/entry.js",
     "./lib/js/basic_inputs.js",
-    "./lib/js/repeat_settings.js"
+    "./lib/js/repeat_settings.js",
+    "./lib/js/push_buttons.js"
   ])
   .pipe(concat("event_calendar.js"))
   .pipe(gulp.dest("./build/js"));

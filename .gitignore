@@ -12,7 +12,8 @@ Thumbs.db
 node_modules
 kendo-ui-core
 .sass-cache/
-test_site
+test_site/css
+test_site/js
 
 
 # Files #

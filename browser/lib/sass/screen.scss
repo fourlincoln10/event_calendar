@@ -1,8 +1,15 @@
 // Variables
+$input-border-color: #9d9d9d;
+$light-gray-1: #ccc;
+$light-gray-2: #f7f7f7;
+$dark-gray-1: #ababab;
 $lg-font-size: 1.1em;
 $mobile-friendly-height: 30px;
-$shadow-color: #ccc;
-$slidedown-bgcolor: #7ec0ee;
+$orange-background: #ffa500;
+$pushbutton-selected-color: #70bfff;
+$serif-font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+$skyblue: #7ec0ee;
+$light-blue: #70bfff;
 $slidedown-label-color: #011d30;
 $white: #fff;
 $window-close-btn-color: #454545;
@@ -10,13 +17,13 @@ $window-close-btn-color: #454545;
 
 // ---------------------------------------
 // 
-// Mobile styles for the basic inputs
+// Mobile styles for basic inputs
 // 
 // ---------------------------------------
 .edit-event-container {
 
   font: {
-    family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    family: $serif-font-family;
     size: .9em;
   }
 
@@ -28,6 +35,13 @@ $window-close-btn-color: #454545;
     display: block;
     font-size: 1.1em;
     font-weight: bold;
+  }
+
+  [type=text]:not(.k-input),
+  [type=number],
+  textarea {
+    -webkit-appearance: none;
+    border: 1px solid $input-border-color;
   }
 
   .summary {
@@ -48,7 +62,6 @@ $window-close-btn-color: #454545;
       font-size: $lg-font-size;
       height: $mobile-friendly-height;
       line-height: $mobile-friendly-height;
-      
     }
 
     [type=date] {
@@ -94,7 +107,7 @@ $window-close-btn-color: #454545;
   .description {
     font-size: 16px;
     height: 100px;
-    width: 99%;
+    width: 98%;
   }
 
   button {
@@ -132,7 +145,302 @@ $window-close-btn-color: #454545;
     }
 
   }
+
+  .weekday-row,
+  .monthday-row,
+  .year-month-row {
+    overflow: hidden;
+    position: relative;
+
+    > * {
+      display: inline-block;
+      float: left;
+    }
+
+  }
+
+  .monthday-container {
+    padding: 0 0 0 10px;
+  }
+
+  .weekday-container,
+  .year-month-container {
+    padding-left: 4px;
+  }
   
+}
+
+// ---------------------------------------
+// 
+// Modal styles
+// 
+// ---------------------------------------
+
+
+// Slidedown
+
+.modal-slidedown.show {
+  -webkit-transform: translateY(0);
+  transform: translateY(0);
+  visibility: visible;
+}
+
+.modal-slidedown {
+  background: $skyblue;  
+  left: 0;
+  min-height: 100%;
+  overflow: hidden;
+  position: absolute;
+  top: 0;
+  -webkit-transform: translateY(-100%);
+  transform: translateY(-100%);
+  -webkit-transition: -webkit-transform .4s ease-in-out, visibility .4s;
+  transition: transform .4s ease-in-out, visibility .4s;
+  width: 100%;
+
+  .close {
+    background: transparent;
+    border: 0;
+    color: $white;
+    font-size: 35px;
+    height: 35px;
+    outline: none;
+    overflow: hidden;
+    position: absolute;
+    right: 0;
+    text-align: center;
+    top: 0;
+    width: 35px;
+    z-index: 100;  
+  }
+
+  .content {
+    padding: 20px 7px 0 20px;
+  }
+
+  .title {
+    display: none;
+  }
+
+  input {
+    font-size: $lg-font-size;
+    height: 20px;
+    line-height: 20px;
+  }
+
+  select {
+    font-size: $lg-font-size;
+  }
+
+  label {
+    color: $slidedown-label-color;
+    padding-bottom: 5px;
+    text-transform: uppercase;
+  }
+
+  .monthday-row {
+    overflow: hidden;
+    position: relative;
+
+    > select,
+    > .monthday-container {
+      display: inline-block;
+      float: left;
+    }
+
+    label:first-child {
+      display: block;
+      float: none;
+    }
+
+    .monthday-container {
+      padding: 0 0 0 10px;
+    }
+  }
+
+  .year-month-row > label,
+  .weekday-row > label {
+    display: block;
+    float: none;
+  }
+
+  .weekday-container,
+  .year-month-container {
+    padding-left: 0;
+  }
+  
+  .end-type {
+
+    [type=radio] {
+      height: auto;
+      line-height: auto;
+    }
+
+    label {
+      font-size: $lg-font-size;
+      text-transform: none;
+    }
+
+    label:not(:last-child) {
+      margin-bottom: 1em;
+      padding-bottom: 0;
+    }
+
+    .prefix {
+      min-width: 11%;
+    }
+
+  }
+
+}
+
+
+// This was a serious pain in the &*% to figure out.
+// For this to work, the container element this is applied to,
+// .repeat-settings-container, has to have visibility: hidden; set initially.
+// Why you ask? Because if it's set to hidden in this class instead, the visibility
+// will initially be visible when the page loads and then *transition* to hidden.
+// Setting visibility to hidden on the container means it will be hidden initially
+// and then when this class is applied for the first time it will stay hidden because
+// this class does not modify visibility. Nonetheless, the transition property
+// applies to visibility in this class, so as long as this class is active, 
+// whenever visibility changes, e.g. in .modal-window.show, it will transition. 
+// The other thing of note is scaling to 0. This is done to prevent the modal 
+// from interfering with mouse/touch events on elements below it.
+.modal-window {
+  background: $white;
+  box-shadow: 0 3px 4px 3px $light-gray-1;
+  height: auto;
+  left: 50%;
+  // max-width: 400px;
+  // min-width: 400px;
+  opacity: 0;
+  padding: 60px 20px 20px;
+  position: absolute;
+  top: 5%;
+  -webkit-transform: translateX(-50%) scale(0);
+  transform: translateX(-50%) scale(0);
+  -webkit-transition: -webkit-transform .3s, opacity .3s, visibility .3s;
+  transition: transform .3s, opacity .3s, visibility .3s;
+  //width: 50%;
+  width: 400px;
+  z-index: 100;
+  
+  .close {
+    background: transparent;
+    border: 0;
+    color: $window-close-btn-color;
+    font-size: 32px;
+    height: 45px;
+    outline: none;
+    overflow: hidden;
+    position: absolute;
+    right: 0;
+    text-align: center;
+    top: 0;
+    width: 45px;
+    z-index: 101;
+  }
+
+
+  label {
+    display: inline-block;
+    font-size: 1em;
+    font-weight: bold;
+    padding-right: 1%;
+    text-align: right;
+    width: 18%;
+  }
+
+  [type=text],
+  [type=number] {
+    border: 1px solid $light-gray-1;
+    font-size: 1.1em;
+  }
+
+  .row {
+    margin-bottom: 1em;  
+  }
+
+  .title {
+    font-size: 1.2em;
+    left: 15px;
+    position: absolute;
+    top: 0;
+  }
+
+  .end-row {
+    overflow: hidden;
+
+    > label {
+      float: left;
+    }
+
+  }
+
+  .end-type {
+    overflow: hidden;
+
+    .prefix {
+      display: inline;
+    }
+
+    label {
+      font-weight: normal;
+      margin-bottom: 10px;
+      text-align: left;
+      width: 100%;
+    }
+
+  }
+
+
+}
+
+.modal-window.show {
+  opacity: 1;
+  -webkit-transform: translateX(-50%) scale(1);
+  transform: translateX(-50%) scale(1);
+  visibility: visible;
+}
+
+
+// ---------------------------------------
+// 
+// Push Button styles
+// 
+// ---------------------------------------
+
+// Assumes Modernizr is being used
+html:not(.touch) .pushButtonsTable td:not(.filler):hover {
+  // background-color: $light-blue;
+  background-color: $orange-background;
+}
+
+.pushButtonsTable {
+  border-collapse: collapse;
+
+  td {
+    background-color: $light-gray-2;
+    border: 1px solid $input-border-color;
+    cursor: pointer;
+    font-family: $serif-font-family;
+    padding: 4px;
+    text-align: center;
+  }
+
+  .filler {
+    background-color: transparent;
+    border-bottom: 0;
+    border-left: 1px solid $dark-gray-1;
+    border-right: 0;
+    border-top: 1px solid $dark-gray-1;
+  }
+
+  .selected {
+    background-color: $pushbutton-selected-color;
+  }
+
 }
 
 
@@ -236,166 +544,4 @@ $window-close-btn-color: #454545;
   }
 
 }
-
-// ---------------------------------------
-// 
-// Modal styles
-// 
-// ---------------------------------------
-
-
-// Slidedown
-
-.modal-slidedown {
-  background: $slidedown-bgcolor;
-  height: 100%;
-  left: 0;
-  position: absolute;
-  top: -100%;
-  -webkit-transition: -webkit-transform .4s ease-in-out, visibility .4s;
-  transition: transform .4s ease-in-out, visibility .4s;
-  width: 100%;
-
-  .close {
-    background: transparent;
-    border: 0;
-    color: $white;
-    font-size: 35px;
-    height: 35px;
-    outline: none;
-    overflow: hidden;
-    position: absolute;
-    right: 0;
-    text-align: center;
-    top: 0;
-    width: 35px;
-    z-index: 100;  
-  }
-
-  .content {
-    padding: 20px 7px 0 20px;
-  }
-
-  .title {
-    display: none;
-  }
-
-  input {
-    font-size: $lg-font-size;
-    height: 20px;
-    line-height: 20px;
-  }
-
-  select {
-    font-size: $lg-font-size;
-  }
-
-  label {
-    color: $slidedown-label-color;
-    padding-bottom: 5px;
-    text-transform: uppercase;
-  }
-
-  .end-type {
-
-    [type=radio] {
-      height: auto;
-      line-height: auto;
-    }
-
-    label {
-      font-size: $lg-font-size;
-      text-transform: none;
-    }
-
-    label:not(:last-child) {
-      margin-bottom: 1em;
-      padding-bottom: 0;
-    }
-
-    .prefix {
-      min-width: 11%;
-    }
-
-  }
-
-}
-
-.modal-slidedown.show {
-  -webkit-transform: translateY(100%);
-  transform: translateY(100%);
-  visibility: visible;
-}
-
-
-// This was a serious pain in the &*% to figure out.
-// For this to work, the container element this is applied to,
-// .repeat-settings-container, has to have visibility: hidden; set initially.
-// Why you ask? Because if it's set to hidden in this class instead, the visibility
-// will initially be visible when the page loads and then *transition* to hidden.
-// Setting visibility to hidden on the container means it will be hidden initially
-// and then when this class is applied for the first time it will stay hidden because
-// this class does not modify visibility. Nonetheless, the transition property
-// applies to visibility in this class, so as long as this class is active, 
-// whenever visibility changes, e.g. in .modal-window.show, it will transition. 
-// The other thing of note is scaling to 0. This is done to prevent the modal 
-// from interfering with mouse/touch events on elements below it.
-.modal-window {
-  background: $white;
-  box-shadow: 0 3px 4px 3px $shadow-color;
-  height: auto;
-  left: 50%;
-  max-width: 500px;
-  min-width: 420px;
-  opacity: 0;
-  padding: 20px;
-  position: absolute;
-  top: 5%;
-  -webkit-transform: translateX(-50%) scale(0);
-  transform: translateX(-50%) scale(0);
-  -webkit-transition: -webkit-transform .3s, opacity .3s, visibility .3s;
-  transition: transform .3s, opacity .3s, visibility .3s;
-  width: 50%;
-  z-index: 100;
-  
-  .close {
-    background: transparent;
-    border: 0;
-    color: $window-close-btn-color;
-    font-size: 32px;
-    height: 45px;
-    outline: none;
-    overflow: hidden;
-    position: absolute;
-    right: 0;
-    text-align: center;
-    top: 0;
-    width: 45px;
-    z-index: 101;
-  }
-
-  label {
-    display: inline-block;
-    font-size: 1em;
-    font-weight: normal;
-    width: 13%;
-  }
-
-  .end-type label {
-    display: block;
-    margin-bottom: 10px;
-    width: 100%;
-  }
-
-
-}
-
-.modal-window.show {
-  opacity: 1;
-  -webkit-transform: translateX(-50%) scale(1);
-  transform: translateX(-50%) scale(1);
-  visibility: visible;
-}
-
-
 

@@ -45,28 +45,29 @@ Event_Calendar.Basic_Inputs = (function(){
   }
 
   // TODO: Account for timezones!
-  function calculateInitDates(values) {
+  function calculateDatesAndTimes(values) {
     var dtstartDate, dtstartTime, dtendDate, dtendTime;
+    var dtFormat = "YYYY/MM/DD", tmFormat = "HH:mm";
     // dtstart
     if(values.dtstart) {
-      dtstartDate = moment(values.dtstart).format("MM-DD-YYYY");
-      dtstartTime = moment(values.dtstart).format("hh:mm A");
+      dtstartDate = moment(values.dtstart).format(dtFormat);
+      dtstartTime = moment(values.dtstart).format(tmFormat);
     }
     else {
-      var coeff = 1000 * 60 * 30;
-      dtstartDate = moment().format("MM-DD-YYYY");
-      dtstartTime = moment(Math.round(new Date().getTime() / coeff) * coeff).format("hh:mm A"); // rounds to nearest 30mins
+      var coeff = 1000 * 60 * 30; // 1000 ms/sec * 60 sec/min * 30 min/1 = 1800000 ms.
+      var rounded = Math.ceil(new Date().getTime() / coeff) * coeff; // Round up to nearest 30 mins and convert to ms
+      dtstartDate = moment(rounded).format(dtFormat);
+      dtstartTime = moment(rounded).format(tmFormat);
     }
     // dtend
     if(values.dtend) {
-      dtendDate = moment(values.dtend).format("MM-DD-YYYY");
-      dtendTime = moment(values.dtend).format("hh:mm A");
+      dtendDate = moment(values.dtend).format(dtFormat);
+      dtendTime = moment(values.dtend).format(tmFormat);
     }
     else {
-      dtendDate = dtstartDate;
       var strDt = dtstartDate + " " + dtstartTime;
-      var format = "MM-DD-YYYY hh:mm A";
-      dtendTime = moment(strDt, format).add(1, "hour").format("hh:mm A");
+      dtendDate = moment(strDt, dtFormat + " " + tmFormat).add(1, "hour").format(dtFormat);
+      dtendTime = moment(strDt, dtFormat + " " + tmFormat).add(1, "hour").format(tmFormat);
     }
     return {
       dtstartDate : dtstartDate,
@@ -76,33 +77,109 @@ Event_Calendar.Basic_Inputs = (function(){
     };
   }
 
-  function initInputs(values) {
-    initInputReferences();
-    var dates = calculateInitDates(values);
+  function setSummary(values) {
+    summaryInput.val(values.summary || "");
+  }
+
+  function setDateField(input, value) {
     if(!Modernizr.touch || !Modernizr.inputtypes.date) {
-      // Date pickers
-      var dtOpts = {
-        value: new Date(dates.dtstartDate),
-        parseFormats: ["MM/dd/yyyy"],
-        min: new Date("01/01/1970")
-      };
-      dtstartDateInput.attr("type", "text").kendoDatePicker(dtOpts);
-      dtOpts.value = new Date(dates.dtendDate);
-      dtendDateInput.attr("type", "text").kendoDatePicker(dtOpts);
-      // Time pickers
-      dtstartTimeInput.attr("type", "text").kendoTimePicker({
-        value : dates.dtstartTime
-      });
-      dtendTimeInput.attr("type", "text").kendoTimePicker({
-        value : dates.dtendTime
-      });
+      var dtPicker = input.data("kendoDatePicker");
+      if(dtPicker) {
+        dtPicker.value(new Date(value));
+      }
+      else {
+        input.attr("type", "text").kendoDatePicker({
+          value: new Date(value),
+          parseFormats: ["yyyy-MM-dd"],
+          format: "MM/dd/yyyy",
+          min: new Date("01/01/1970")
+        });
+      }
     }
     else {
-      dtstartDateInput[0].valueAsDate = dates.dtstartDate;
-      dtendDateInput.valueAsDate = dates.dtendDate;
-      dtstartTimeInput[0].value = dates.dtstartTime;
-      dtendTimeInput[0].value = dates.dtendTime;
+      input[0].valueAsDate = new Date(value);
     }
+  }
+
+  function setDtstartDate(values) {
+    if(values.dtstartDate) {
+      setDateField(dtstartDateInput, values.dtstartDate);
+    }
+    else {
+      var dt = calculateDatesAndTimes(values);
+      setDateField(dtstartDateInput, dt.dtstartDate);
+    }
+  }
+
+  function setDtendDate(values) {
+    if(values.dtendDate) {
+      setDateField(dtendDateInput, values.dtendDate);
+    }
+    else {
+      var dt = calculateDatesAndTimes(values);
+      setDateField(dtendDateInput, dt.dtendDate);
+    }
+  }
+
+  function setTimeField(input, value) {
+    if(!Modernizr.touch || !Modernizr.inputtypes.date) {
+      var timePicker = input.data("kendoTimePicker");
+      if(timePicker) {
+        timePicker.value(dtstartTime);
+      }
+      else {
+        input.attr("type", "text").kendoTimePicker({
+          value : value
+        });
+      }
+    }
+    else {
+      input[0].value = value;
+    }
+  }
+  
+  function setDtstartTime(values) {
+    if(values.dtstartTime) {
+      setTimeField(dtstartTimeInput, values.dtstartTime);
+    }
+    else {
+      var dt = calculateDatesAndTimes(values);
+      setTimeField(dtstartTimeInput, dt.dtstartTime);
+    }
+  }
+
+  function setDtendTime(values) {
+    if(values.dtendTime) {
+      setTimeField(dtendTimeInput, values.dtendTime);
+    }
+    else {
+      var dt = calculateDatesAndTimes(values);
+      setTimeField(dtendTimeInput, dt.dtendTime);
+    }
+  }
+
+  function setLocation(values) {
+    locationInput.val(values.location || "");
+  }
+
+  function setDescription(values) {
+    descriptionInput.val(values.description || "");
+  }
+
+  function setValues(values) {
+    values = values || {};
+    setSummary(values);
+    setDtstartDate(values);
+    setDtstartTime(values);
+    setDtendDate(values);
+    setDtendTime(values);
+    setLocation(values);
+    setDescription(values);
+  }
+
+  function initInputs(values) {
+    initInputReferences();
+    setValues(values);
   }
 
   function initEvents() {

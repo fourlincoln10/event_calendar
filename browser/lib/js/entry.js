@@ -24,11 +24,18 @@ Event_Calendar.Entry = (function(){
     bi.render(values);
     rs = new Event_Calendar.Repeat_Settings(".repeat-settings-container", this);
     rs.render();
+    initEvents();
   }
 
   /**
    * Private Functions
    */
+  function initEvents() {
+    // Set up the events we are going to listen to
+    container.off();
+    container.on("pushButtonSelected", function(){console.log("pushButtonSelected");});
+    container.on("pushButtonDeselected", function(){console.log("pushButtonDeselected");});
+  }
   
 
   /**
