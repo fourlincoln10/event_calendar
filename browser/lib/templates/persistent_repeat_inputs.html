@@ -23,9 +23,9 @@
   <div class='end-row row'>
     <label>Ending: <a class='inlineHelp' data-help='These buttons allow you to choose when the event should stop repeating. Choose "After" if you want to limit the event to a certain number of occurrences. Choose "Until" if you want the event to stop repeating on a specific date and time.'><i class='icon-question-sign'></i></a></label>
     <div class="end-type">
-      <label><input type="radio" class="never-rb" /> <span class="prefix">Never </span></label>
-      <label><input type="radio" class="count-rb" /> <span class="prefix">After </span><input type="number" class="count" min="1" pattern="\d*"/> <span class="suffix">occurrence(s)</span></label>
-      <label><input type="radio" class="until-rb" /> <span class="prefix">On </span><input type="text" class="until"/></label>
+      <label><input type="radio" name="end-type" class="never-rb" /> <span class="prefix">Never </span></label>
+      <label><input type="radio" name="end-type" class="count-rb" /> <span class="prefix">After </span><input type="number" class="count" min="1" pattern="\d*"/> <span class="suffix">occurrence(s)</span></label>
+      <label><input type="radio" name="end-type" class="until-rb" /> <span class="prefix">On </span><input type="text" class="until"/></label>
     </div>
   </div>
   <div class="repeat-settings"></div>

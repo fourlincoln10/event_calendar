@@ -20,9 +20,9 @@ Event_Calendar.Entry = (function(){
     }
     model = new Event_Calendar.Model(values);
     container.html(Event_Calendar.Templates.entry_container);
-    bi = new Event_Calendar.Basic_Inputs(".basic-inputs-container", this);
+    bi = new Event_Calendar.Basic_Inputs(".basic-inputs-container", this, model);
     bi.render(values);
-    rs = new Event_Calendar.Repeat_Settings(".repeat-settings-container", this);
+    rs = new Event_Calendar.Repeat_Settings(".repeat-settings-container", this, model);
     rs.render();
     initEvents();
   }

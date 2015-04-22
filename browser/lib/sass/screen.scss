@@ -353,9 +353,11 @@ $window-close-btn-color: #454545;
   }
 
   [type=text],
+  [type=text]:disabled,
   [type=number] {
     border: 1px solid $light-gray-1;
-    font-size: 1.1em;
+    padding: 2px;
+    font-size: 1em;
   }
 
   .row {
@@ -367,6 +369,10 @@ $window-close-btn-color: #454545;
     left: 15px;
     position: absolute;
     top: 0;
+  }
+
+  .dtstart {
+    width: 25%;
   }
 
   .end-row {

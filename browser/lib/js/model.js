@@ -49,23 +49,38 @@ Event_Calendar.Model = (function(){
     return _.extend(d, old);
   }
 
+  function roundDateToNearestHalfHour(dt) {
+    var coeff = 1000 * 60 * 30; // 1000 ms/sec * 60 sec/min * 30 min/1 = 1800000 ms.
+    var roundedMs = Math.ceil(dt.getTime() / coeff) * coeff; // Round up to nearest 30 mins and convert to ms
+    return new Date(roundedMs);
+  }
+
+  function defaultValues() {
+    var defaults = {
+      freq: "daily", 
+      interval: 1,
+      dtstart: moment(roundDateToNearestHalfHour(new Date())).format(Event_Calendar.Cfg.MOMENT_DATE_TIME_FORMAT),
+    };
+    defaults.dtend = moment(defaults.dtstart).add(1, "hour").format(Event_Calendar.Cfg.MOMENT_DATE_TIME_FORMAT);
+    return defaults;
+  }
+
   /**
    * Model Constructor
    * @param {Object} evt An object containing event properties
    */
-  function Model(evt){
+  function Model(values){
     data = {};
+    values = values || defaultValues();
     savedState = null;
-    if(evt) {
-      this.setEvent(evt);
-    }
+    this.setEvent(values);
   }
 
   /**
    * API
    */
   Model.prototype = {
-
+    
     /**
      * Get data
      */
@@ -132,14 +147,17 @@ Event_Calendar.Model = (function(){
      *  Remove data
      */
     removeProperty : function removeProperty(prop) {
-      if(typeof data[prop] !== "undefined") {
-        delete data[prop];
-        // Can't have an RRule w/o a freq
-        if(prop == "freq") {
-          data = _.omit(data, Event_Calendar.Cfg.REPEAT_PROPERTIES);
+      prop = Array.isArray(prop) ? prop : [prop];
+      prop.forEach(function(p){
+        if(typeof data[p] !== "undefined") {
+          delete data[p];
+          // Can't have an RRule w/o a freq
+          if(p == "freq") {
+            data = _.omit(data, Event_Calendar.Cfg.REPEAT_PROPERTIES);
+          }
         }
-        return publish("updated", this.getEvent());
-      }
+      });
+      return publish("updated", this.getEvent());
     }
 
   };

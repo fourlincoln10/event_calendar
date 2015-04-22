@@ -361,25 +361,17 @@ CustomRecurrenceView.prototype.loadData = function(r) {
       this.renderNeverFreq();
       break;
     case 'daily' :
-      //this.weekDayPushButtons.removeAllData();
-      //this.monthDayPushButtons.removeAllData();
-      //this.yearMonthPushButtons.removeAllData();
       this.renderDailyFreq();
       break;
     case 'weekly' :
-      //this.monthDayPushButtons.removeAllData();
       this.weekDayPushButtons.loadData(r.byDay);
       this.renderWeeklyFreq();
       break;
     case 'monthly' :
-      //this.weekDayPushButtons.removeAllData();
-      //this.yearMonthPushButtons.removeAllData();
       this.loadMonthlyData(r);
       this.renderMonthlyFreq();
       break;
     case 'yearly' :
-      //this.weekDayPushButtons.removeAllData();
-      //this.monthDayPushButtons.removeAllData();
       this.loadYearlyData(r);
       this.renderYearlyFreq();
       break;

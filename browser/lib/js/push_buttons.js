@@ -45,7 +45,7 @@ Event_Calendar.PushButtons = (function(){
     }).eq(0);
   }
 
-  function loadData(data) {
+  function set(data) {
     removeAllData();
     (data || []).forEach(function(d){
       var cell = findCell(d);
@@ -121,7 +121,8 @@ Event_Calendar.PushButtons = (function(){
   }
 
   var api = {
-    render : render
+    render : render,
+    set : set
   };
 
   PushButtons.prototype = api;

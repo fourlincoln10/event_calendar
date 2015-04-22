@@ -7,6 +7,7 @@ Event_Calendar.Basic_Inputs = (function(){
 
   var controller,
       container,
+      model,
       summaryInput,
       dtstartDateInput,
       dtstartTimeInput,
@@ -21,12 +22,13 @@ Event_Calendar.Basic_Inputs = (function(){
    * Basic Inputs Constructor
    * @param {Object} evt An object containing event properties
    */
-  function Basic_Inputs(containerSelector, contr) {
+  function Basic_Inputs(containerSelector, contr, md) {
     container = $(containerSelector);
     if(container.length === 0) {
       throw new Error("Basic_Inputs(): Unable to locate container");
     }
     controller = contr;
+    model = md;
   }
 
   /**
@@ -44,142 +46,84 @@ Event_Calendar.Basic_Inputs = (function(){
     descriptionInput = $("textarea.description", container);
   }
 
-  // TODO: Account for timezones!
-  function calculateDatesAndTimes(values) {
-    var dtstartDate, dtstartTime, dtendDate, dtendTime;
-    var dtFormat = "YYYY/MM/DD", tmFormat = "HH:mm";
-    // dtstart
-    if(values.dtstart) {
-      dtstartDate = moment(values.dtstart).format(dtFormat);
-      dtstartTime = moment(values.dtstart).format(tmFormat);
-    }
-    else {
-      var coeff = 1000 * 60 * 30; // 1000 ms/sec * 60 sec/min * 30 min/1 = 1800000 ms.
-      var rounded = Math.ceil(new Date().getTime() / coeff) * coeff; // Round up to nearest 30 mins and convert to ms
-      dtstartDate = moment(rounded).format(dtFormat);
-      dtstartTime = moment(rounded).format(tmFormat);
-    }
-    // dtend
-    if(values.dtend) {
-      dtendDate = moment(values.dtend).format(dtFormat);
-      dtendTime = moment(values.dtend).format(tmFormat);
-    }
-    else {
-      var strDt = dtstartDate + " " + dtstartTime;
-      dtendDate = moment(strDt, dtFormat + " " + tmFormat).add(1, "hour").format(dtFormat);
-      dtendTime = moment(strDt, dtFormat + " " + tmFormat).add(1, "hour").format(tmFormat);
-    }
-    return {
-      dtstartDate : dtstartDate,
-      dtstartTime : dtstartTime,
-      dtendDate : dtendDate,
-      dtendTime : dtendTime
-    };
-  }
-
-  function setSummary(values) {
-    summaryInput.val(values.summary || "");
-  }
-
-  function setDateField(input, value) {
-    if(!Modernizr.touch || !Modernizr.inputtypes.date) {
-      var dtPicker = input.data("kendoDatePicker");
-      if(dtPicker) {
-        dtPicker.value(new Date(value));
-      }
-      else {
-        input.attr("type", "text").kendoDatePicker({
-          value: new Date(value),
+  function initInputs(values) {
+    // Date fields
+    [dtstartDateInput, dtendDateInput].forEach(function(input){
+      if(!Modernizr.touch || !Modernizr.inputtypes.date) {
+        $(input).attr("type", "text").kendoDatePicker({
           parseFormats: ["yyyy-MM-dd"],
           format: "MM/dd/yyyy",
           min: new Date("01/01/1970")
         });
       }
+    });
+    // Time fields
+    [dtstartTimeInput, dtendTimeInput].forEach(function(input){
+      if(!Modernizr.touch || !Modernizr.inputtypes.date) {
+        $(input).attr("type", "text").kendoTimePicker({});
+      }
+    });
+  }
+
+  function setSummary(summary) {
+    summaryInput.val(summary);
+  }
+
+  function setDateField(input, value) {
+    var kendoDatePicker = input.data("kendoDatePicker");
+    if(kendoDatePicker) {
+      kendoDatePicker.value(value);
     }
     else {
-      input[0].valueAsDate = new Date(value);
+      input[0].valueAsDate = value;
     }
   }
 
-  function setDtstartDate(values) {
-    if(values.dtstartDate) {
-      setDateField(dtstartDateInput, values.dtstartDate);
-    }
-    else {
-      var dt = calculateDatesAndTimes(values);
-      setDateField(dtstartDateInput, dt.dtstartDate);
-    }
+  function setDtstartDate(dtstart) {
+    setDateField(dtstartDateInput, dtstart);
   }
 
-  function setDtendDate(values) {
-    if(values.dtendDate) {
-      setDateField(dtendDateInput, values.dtendDate);
-    }
-    else {
-      var dt = calculateDatesAndTimes(values);
-      setDateField(dtendDateInput, dt.dtendDate);
-    }
+  function setDtendDate(dtend) {
+    setDateField(dtendDateInput, dtend);
   }
 
   function setTimeField(input, value) {
-    if(!Modernizr.touch || !Modernizr.inputtypes.date) {
-      var timePicker = input.data("kendoTimePicker");
-      if(timePicker) {
-        timePicker.value(dtstartTime);
-      }
-      else {
-        input.attr("type", "text").kendoTimePicker({
-          value : value
-        });
-      }
+    var kendoTimePicker = input.data("kendoTimePicker");
+    if(kendoTimePicker) {
+      value = moment(value).format(Event_Calendar.Cfg.MOMENT_12_HR_TIME_FORMAT);
+      kendoTimePicker.value(value);
     }
     else {
+      value = moment(value).format(Event_Calendar.Cfg.MOMENT_24_HR_TIME_FORMAT);
       input[0].value = value;
     }
   }
   
-  function setDtstartTime(values) {
-    if(values.dtstartTime) {
-      setTimeField(dtstartTimeInput, values.dtstartTime);
-    }
-    else {
-      var dt = calculateDatesAndTimes(values);
-      setTimeField(dtstartTimeInput, dt.dtstartTime);
-    }
+  function setDtstartTime(dtstart) {
+    setTimeField(dtstartTimeInput, dtstart);
   }
 
-  function setDtendTime(values) {
-    if(values.dtendTime) {
-      setTimeField(dtendTimeInput, values.dtendTime);
-    }
-    else {
-      var dt = calculateDatesAndTimes(values);
-      setTimeField(dtendTimeInput, dt.dtendTime);
-    }
+  function setDtendTime(dtend) {
+    setTimeField(dtendTimeInput, dtend);
   }
 
-  function setLocation(values) {
-    locationInput.val(values.location || "");
+  function setLocation(loc) {
+    locationInput.val(loc);
   }
 
-  function setDescription(values) {
-    descriptionInput.val(values.description || "");
+  function setDescription(desc) {
+    descriptionInput.val(desc);
   }
 
   function setValues(values) {
     values = values || {};
-    setSummary(values);
-    setDtstartDate(values);
-    setDtstartTime(values);
-    setDtendDate(values);
-    setDtendTime(values);
-    setLocation(values);
-    setDescription(values);
-  }
-
-  function initInputs(values) {
-    initInputReferences();
-    setValues(values);
+    setSummary(values.summary || "");
+    setDtstartDate(values.dtstart);
+    setDtstartTime(values.dtstart);
+    setDtendDate(values.dtend);
+    setDtendTime(values.dtend);
+    setLocation(values.location || "");
+    setDescription(values.description || "");
   }
 
   function initEvents() {
@@ -194,10 +138,11 @@ Event_Calendar.Basic_Inputs = (function(){
     /**
      * Render inputs
      */
-    render : function render(values) {
-      values = values || {};
+    render : function render() {
       container.html(Event_Calendar.Templates.basic_inputs);
-      initInputs(values);
+      initInputReferences();
+      initInputs();
+      setValues(model.getEvent());
       initEvents();
     }
     

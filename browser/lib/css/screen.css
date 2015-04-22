@@ -185,9 +185,10 @@
     padding-right: 1%;
     text-align: right;
     width: 18%; }
-  .modal-window [type=text], .modal-window [type=number] {
+  .modal-window [type=text], .modal-window [type=text]:disabled, .modal-window [type=number] {
     border: 1px solid #ccc;
-    font-size: 1.1em; }
+    padding: 2px;
+    font-size: 1em; }
   .modal-window .row {
     margin-bottom: 1em; }
   .modal-window .title {
@@ -195,6 +196,8 @@
     left: 15px;
     position: absolute;
     top: 0; }
+  .modal-window .dtstart {
+    width: 25%; }
   .modal-window .end-row {
     overflow: hidden; }
     .modal-window .end-row > label {
