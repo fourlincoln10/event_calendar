@@ -122,7 +122,8 @@ Event_Calendar.PushButtons = (function(){
 
   var api = {
     render : render,
-    set : set
+    set : set, 
+    getSelectedData : getSelectedData
   };
 
   PushButtons.prototype = api;

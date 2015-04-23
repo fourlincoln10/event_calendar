@@ -147,7 +147,8 @@ $window-close-btn-color: #454545;
   }
 
   .weekday-row,
-  .monthday-row,
+  .monthday-numeric-row,
+  .monthday-occurrence-row,
   .year-month-row {
     overflow: hidden;
     position: relative;
@@ -159,13 +160,17 @@ $window-close-btn-color: #454545;
 
   }
 
-  .monthday-container {
-    padding: 0 0 0 10px;
+  // These next 2 selector groups are hacks
+  // because the elements are being clipped by
+  // their container 
+  .monthday-occurrence-number {
+    margin-top: 2px;
   }
 
   .weekday-container,
-  .year-month-container {
-    padding-left: 4px;
+  .year-month-container,
+  .monthday-container {
+    padding: 2px 0 0 4px;
   }
   
 }
@@ -349,7 +354,7 @@ $window-close-btn-color: #454545;
     font-weight: bold;
     padding-right: 1%;
     text-align: right;
-    width: 18%;
+    width: 19%;
   }
 
   [type=text],
@@ -396,6 +401,10 @@ $window-close-btn-color: #454545;
       margin-bottom: 10px;
       text-align: left;
       width: 100%;
+    }
+
+    label:last-of-type {
+      display: inline;
     }
 
   }

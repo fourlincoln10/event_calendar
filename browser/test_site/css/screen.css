@@ -65,16 +65,16 @@
     text-align: left; }
   .repeat-settings-container .end-row .suffix {
     display: inline; }
-  .repeat-settings-container .weekday-row, .repeat-settings-container .monthday-row, .repeat-settings-container .year-month-row {
+  .repeat-settings-container .weekday-row, .repeat-settings-container .monthday-numeric-row, .repeat-settings-container .monthday-occurrence-row, .repeat-settings-container .year-month-row {
     overflow: hidden;
     position: relative; }
-    .repeat-settings-container .weekday-row > *, .repeat-settings-container .monthday-row > *, .repeat-settings-container .year-month-row > * {
+    .repeat-settings-container .weekday-row > *, .repeat-settings-container .monthday-numeric-row > *, .repeat-settings-container .monthday-occurrence-row > *, .repeat-settings-container .year-month-row > * {
       display: inline-block;
       float: left; }
-  .repeat-settings-container .monthday-container {
-    padding: 0 0 0 10px; }
-  .repeat-settings-container .weekday-container, .repeat-settings-container .year-month-container {
-    padding-left: 4px; }
+  .repeat-settings-container .monthday-occurrence-number {
+    margin-top: 2px; }
+  .repeat-settings-container .weekday-container, .repeat-settings-container .year-month-container, .repeat-settings-container .monthday-container {
+    padding: 2px 0 0 4px; }
 
 .modal-slidedown.show {
   -webkit-transform: translateY(0);
@@ -184,7 +184,7 @@
     font-weight: bold;
     padding-right: 1%;
     text-align: right;
-    width: 18%; }
+    width: 19%; }
   .modal-window [type=text], .modal-window [type=text]:disabled, .modal-window [type=number] {
     border: 1px solid #ccc;
     padding: 2px;
@@ -211,6 +211,8 @@
       margin-bottom: 10px;
       text-align: left;
       width: 100%; }
+    .modal-window .end-type label:last-of-type {
+      display: inline; }
 
 .modal-window.show {
   opacity: 1;

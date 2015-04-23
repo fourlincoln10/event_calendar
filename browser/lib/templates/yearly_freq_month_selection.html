@@ -3,16 +3,15 @@
   <div class='year-month-container pushbutton-container'></div>
 </div>
 <div class='year-day-row row'>
-  <label>On: <a class='inlineHelp' data-help='Select "First", "Second", "Third", "Fourth" or "Last" if the event needs to repeat on the first, second, third fourth or last day of the week that will appear in a drop down menu to the right.'><i class='icon-question-sign'></i></a></label>
-  <select class='yearday-occurrence-number'>
-    <option value=''></option>
+  <label><input type="checkbox" class="year-day-occurrence-active"/> On: <a class='inlineHelp' data-help='Select "First", "Second", "Third", "Fourth" or "Last" if the event needs to repeat on the first, second, third fourth or last day of the week that will appear in a drop down menu to the right.'><i class='icon-question-sign'></i></a></label>
+  <select class='yearday-occurrence-number' disabled>
     <option value='1'>First</option>
     <option value='2'>Second</option>
     <option value='3'>Third</option>
     <option value='4'>Fourth</option>
     <option value='-1'>Last</option>
   </select>
-  <select class='yearday-drop-down'>
+  <select class='yearday-drop-down' disabled>
     <option value='su'>Sunday</option>
     <option value='mo'>Monday</option>
     <option value='tu'>Tuesday</option>

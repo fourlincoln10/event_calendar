@@ -143,6 +143,20 @@ Event_Calendar.Model = (function(){
       }
     },
 
+    setRepeatProperties : function setRepeatProperties(props) {
+      var temp = _.extend({}, data, props);
+      var validationErrors = v.validateEvent(temp);
+      if(validationErrors.length === 0) {
+        data = temp;
+        if(!savedState) savedState = _.extend({}, temp);
+        return this.getEvent();
+      } 
+      else {
+        return new Event_Calendar.Errors.ErrorGroup(null, validationErrors);
+      }
+
+    },
+
     /**
      *  Remove data
      */
@@ -158,6 +172,10 @@ Event_Calendar.Model = (function(){
         }
       });
       return publish("updated", this.getEvent());
+    },
+
+    removeRepeatProperties : function removeRepeatProperties() {
+      removeProperty("freq"); // This will remove all repeat properties
     }
 
   };

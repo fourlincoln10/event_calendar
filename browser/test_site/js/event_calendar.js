@@ -306,12 +306,12 @@ Event_Calendar.Validate = {
 Event_Calendar.Templates = {
   "basic_inputs": "<div class=\"basic-inputs\"><div class=\"save-button-row row\"> <button class=\"save-button\" title=\"Save\">Save</button></div><div class=\"title-row row\"> <label>Title</label> <input type=\"text\" title=\"Event Title\" class=\"summary\" /></div><div class=\"date-row row\"> <label>Start/End</label> <span class=\"dtstart-group\"><span class=\"dtstart-prefix prefix\">From</span> <input type=\"date\" title=\"From Date\" class=\"dtstart-date\" /> <span class=\"dtstart-separator separator\">at</span> <input type=\"time\" title=\"From Time\" class=\"dtstart-time\" /></span> <span class=\"dtend-group\"><span class=\"dtend-prefix prefix\">To</span> <input type=\"date\" title=\"To Date\" class=\"dtend-date\" /> <span class=\"dtend-separator separator\">at</span> <input type=\"time\" title=\"To Time\" class=\"dtend-time\" /></span></div><div class=\"allday-row row\"> <label>All Day <input type=\"checkbox\" title=\"All Day\" class=\"allday\" /></label></div><div class=\"repeat-row row\"> <label>Repeat <input type=\"checkbox\" title=\"Repeat\" class=\"repeat\" /><span class=\"repeat-msg\"></span></label></div><div class=\"location-row row\"> <label>Location</label> <input type=\"text\" title=\"Event Location\" class=\"location\" /></div><div class=\"description-row row\"> <label>Description</label><textarea class=\"description\"></textarea></div></div>",
   "entry_container": "<div class=\"edit-event-container\"><div class=\"basic-inputs-container\"></div><div class=\"repeat-settings-container\"></div></div>",
-  "monthly_freq_day_of_week": "<div class='monthday-row row'> <label>On:<a class='inlineHelp' data-help='Select \"Day\" and one of the days of the month if the event needs to repeat on one or more days of the month e.g. the 1st and the 15th. Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third, fourth or last day of the week. A drop down menu will appear to the right so you can choose the day of the week.'><i class='icon-question-sign'></i></a></label> <select class='monthday-occurrence-number'><option value='day'>Day</option><option value='' disabled='disabled'></option><option value='1'>First</option><option value='2'>Second</option><option value='3'>Third</option><option value='4'>Fourth</option><option value='-1'>Last</option></select><div class='monthday-container'><div class='select-container'> <select class='month-day-dropdown'><option value='su'>Sunday</option><option value='mo'>Monday</option><option value='tu'>Tuesday</option><option value='we'>Wednesday</option><option value='th'>Thursday</option><option value='fr'>Friday</option><option value='sa'>Saturday</option><option value='' disabled='disabled'></option><option value='day'>Day</option><option value='weekday'>Weekday</option><option value='weekendday'>Weekend Day</option></select></div></div></div>",
-  "monthly_freq_numeric_day": "<div class='monthday-row row'> <label>On:<a class='inlineHelp' data-help='Select \"Day\" and one of the days of the month if the event needs to repeat on one or more days of the month e.g. the 1st and the 15th. Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third, fourth or last day of the week. A drop down menu will appear to the right so you can choose the day of the week.'><i class='icon-question-sign'></i></a></label> <select class='monthday-occurrence-number'><option value='day'>Day</option><option value='' disabled='disabled'></option><option value='1'>First</option><option value='2'>Second</option><option value='3'>Third</option><option value='4'>Fourth</option><option value='-1'>Last</option></select><div class='monthday-container'><div class='pushbutton-container'></div></div></div>",
-  "persistent_repeat_inputs": "<div class=\"content\"> <button class=\"close\">&#xd7;</button><h3 class=\"title\">Repeat Settings</h3><div class='freq-row row'> <label>Repeats:<a class='inlineHelp' data-help='The unit of time used to determine how often the event should repeat e.g. monthly. Defaults to \"never\".'><i class='icon-question-sign'></i></a></label> <select class='freq'><option value='daily'>Daily</option><option value='weekly'>Weekly</option><option value='monthly'>Monthly</option><option value='yearly'>Yearly</option></select><div class='nextOccurrence'></div></div><div class='interval-row row'> <label>Every:<a class='inlineHelp' data-help='This value works with the \"repeats\" unit of time to determine how often the event will repeat e.g. 2 with \"monthly\" means every 2 months. Defaults to 1 if you leave this blank.'><i class='icon-question-sign'></i></a></label> <input type='number' class='interval' min='1' pattern=\"\\d*\"/><span class='intervalTimeUnit'></span></div><div class=\"variable-content-row row\"></div><div class='dtstart-row row'> <label>Starting:<a class='inlineHelp' data-help='The date and time the event starts repeating. You should make this the date and time you want the event to initially appear.'><i class='icon-question-sign'></i></a></label> <input type='text' class='dtstart' /></div><div class='end-row row'> <label>Ending:<a class='inlineHelp' data-help='These buttons allow you to choose when the event should stop repeating. Choose \"After\" if you want to limit the event to a certain number of occurrences. Choose \"Until\" if you want the event to stop repeating on a specific date and time.'><i class='icon-question-sign'></i></a></label><div class=\"end-type\"> <label><input type=\"radio\" name=\"end-type\" class=\"never-rb\" /> <span class=\"prefix\">Never</span></label> <label><input type=\"radio\" name=\"end-type\" class=\"count-rb\" /> <span class=\"prefix\">After</span> <input type=\"number\" class=\"count\" min=\"1\" pattern=\"\\d*\"/> <span class=\"suffix\">occurrence(s)</span></label> <label><input type=\"radio\" name=\"end-type\" class=\"until-rb\" /> <span class=\"prefix\">On</span> <input type=\"text\" class=\"until\"/></label></div></div><div class=\"repeat-settings\"></div><div class='button-row row'> <button class='ok'>Ok</button> &nbsp; <button class='cancel'>Cancel</button></div></div>",
+  "monthly_freq_day_of_week": "<div class='monthday-row row'> <label><input type=\"radio\" class=\"monthday-occurence-active\"/> On:<a class='inlineHelp' data-help='Select \"Day\" and one of the days of the month if the event needs to repeat on one or more days of the month e.g. the 1st and the 15th. Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third, fourth or last day of the week. A drop down menu will appear to the right so you can choose the day of the week.'><i class='icon-question-sign'></i></a></label> <select class='monthday-occurrence-number'><option value='day'>Day</option><option value='' disabled='disabled'></option><option value='1'>First</option><option value='2'>Second</option><option value='3'>Third</option><option value='4'>Fourth</option><option value='-1'>Last</option></select><div class='monthday-container'><div class='select-container'> <select class='month-day-dropdown'><option value='su'>Sunday</option><option value='mo'>Monday</option><option value='tu'>Tuesday</option><option value='we'>Wednesday</option><option value='th'>Thursday</option><option value='fr'>Friday</option><option value='sa'>Saturday</option><option value='' disabled='disabled'></option><option value='day'>Day</option><option value='weekday'>Weekday</option><option value='weekendday'>Weekend Day</option></select></div></div></div>",
+  "monthly_freq_numeric_day": "<div class='row monthday-numeric-row'> <label><input type=\"radio\" name=\"active-monthday-type\" class=\"monthday-occurence-active\" checked /> Each:<a class='inlineHelp' data-help='Select \"Day\" and one of the days of the month if the event needs to repeat on one or more days of the month e.g. the 1st and the 15th. Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third, fourth or last day of the week. A drop down menu will appear to the right so you can choose the day of the week.'><i class='icon-question-sign'></i></a></label><div class='monthday-container'><div class='pushbutton-container'></div></div></div><div class='row monthday-occurrence-row'> <label><input type=\"radio\" name=\"active-monthday-type\" class=\"monthday-occurence-active\" /> On the:<a class='inlineHelp' data-help='Select \"Day\" and one of the days of the month if the event needs to repeat on one or more days of the month e.g. the 1st and the 15th. Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third, fourth or last day of the week. A drop down menu will appear to the right so you can choose the day of the week.'><i class='icon-question-sign'></i></a></label> <select class='monthday-occurrence-number' disabled><option value='1'>First</option><option value='2'>Second</option><option value='3'>Third</option><option value='4'>Fourth</option><option value='-1'>Last</option></select><div class='monthday-container'><div class='select-container'> <select class='month-day-dropdown' disabled><option value='su'>Sunday</option><option value='mo'>Monday</option><option value='tu'>Tuesday</option><option value='we'>Wednesday</option><option value='th'>Thursday</option><option value='fr'>Friday</option><option value='sa'>Saturday</option><option value='' disabled='disabled'></option><option value='day'>Day</option><option value='weekday'>Weekday</option><option value='weekendday'>Weekend Day</option></select></div></div></div>",
+  "persistent_repeat_inputs": "<div class=\"content\"> <button class=\"close\">&#xd7;</button><h3 class=\"title\">Repeat Settings</h3><div class='freq-row row'> <label>Repeats:<a class='inlineHelp' data-help='The unit of time used to determine how often the event should repeat e.g. monthly. Defaults to \"never\".'><i class='icon-question-sign'></i></a></label> <select class='freq'><option value='daily'>Daily</option><option value='weekly'>Weekly</option><option value='monthly'>Monthly</option><option value='yearly'>Yearly</option></select><div class='nextOccurrence'></div></div><div class='interval-row row'> <label>Every:<a class='inlineHelp' data-help='This value works with the \"repeats\" unit of time to determine how often the event will repeat e.g. 2 with \"monthly\" means every 2 months. Defaults to 1 if you leave this blank.'><i class='icon-question-sign'></i></a></label> <input type='number' class='interval' min='1' pattern=\"\\d*\"/><span class='intervalTimeUnit'></span></div><div class=\"variable-content-row row\"></div><div class='dtstart-row row'> <label>Starting:<a class='inlineHelp' data-help='The date and time the event starts repeating. You should make this the date and time you want the event to initially appear.'><i class='icon-question-sign'></i></a></label> <input type='text' class='dtstart' /></div><div class='end-row row'> <label>Ending:<a class='inlineHelp' data-help='These buttons allow you to choose when the event should stop repeating. Choose \"After\" if you want to limit the event to a certain number of occurrences. Choose \"Until\" if you want the event to stop repeating on a specific date and time.'><i class='icon-question-sign'></i></a></label><div class=\"end-type\"> <label><input type=\"radio\" name=\"end-type\" class=\"never-rb\" /> <span class=\"prefix\">Never</span></label> <label><input type=\"radio\" name=\"end-type\" class=\"count-rb\" /> <span class=\"prefix\">After</span> <input type=\"number\" class=\"count\" min=\"1\" pattern=\"\\d*\"/> <span class=\"suffix\">occurrence(s)</span></label> <label><input type=\"radio\" name=\"end-type\" class=\"until-rb\" /> <span class=\"prefix\">On</span></label> <input type=\"date\" class=\"until\"/></div></div><div class=\"repeat-settings\"></div><div class='button-row row'> <button class='ok'>Ok</button> &nbsp; <button class='cancel'>Cancel</button></div></div>",
   "quick_entry_inputs": "<div class=\"dtstart-group\"><h2>Start Date</h2><div class=\"dtstart-inputs\"> <input class=\"ds-date\" title=\"From date\"> <input class=\"ds-time\" title=\"From time\"></div></div><div class=\"dtend-group\"><h2>End Date</h2><div class=\"dtend-inputs\"> <input class=\"de-date\" title=\"End date\"> <input class=\"de-time\" title=\"End time\"></div></div><div class=\"summary-group\"><h2>Summary</h2><div class=\"summary\"><textarea class=\"summary\"></textarea></div></div><div class=\"submit-button\"></div>",
   "weekly_freq_day_of_week": "<div class='weekday-row row'> <label>On:<a class='inlineHelp' data-help='Use this value if the event needs to repeat on one or more days of the week e.g. Monday and Wednesday.'><i class='icon-question-sign'></i></a></label><div class='weekday-container pushbutton-container'></div></div>",
-  "yearly_freq_month_selection": "<div class='year-month-row row'> <label>In:<a class='inlineHelp' data-help='You can limit the months the event will repeat in by selecting one or more months.'><i class='icon-question-sign'></i></a></label><div class='year-month-container pushbutton-container'></div></div><div class='year-day-row row'> <label>On:<a class='inlineHelp' data-help='Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third fourth or last day of the week that will appear in a drop down menu to the right.'><i class='icon-question-sign'></i></a></label> <select class='yearday-occurrence-number'><option value=''></option><option value='1'>First</option><option value='2'>Second</option><option value='3'>Third</option><option value='4'>Fourth</option><option value='-1'>Last</option></select> <select class='yearday-drop-down'><option value='su'>Sunday</option><option value='mo'>Monday</option><option value='tu'>Tuesday</option><option value='we'>Wednesday</option><option value='th'>Thursday</option><option value='fr'>Friday</option><option value='sa'>Saturday</option><option value='' disabled='disabled'></option><option value='day'>Day</option><option value='weekday'>Weekday</option><option value='weekendday'>Weekend Day</option></select></div>"
+  "yearly_freq_month_selection": "<div class='year-month-row row'> <label>In:<a class='inlineHelp' data-help='You can limit the months the event will repeat in by selecting one or more months.'><i class='icon-question-sign'></i></a></label><div class='year-month-container pushbutton-container'></div></div><div class='year-day-row row'> <label><input type=\"checkbox\" class=\"year-day-occurrence-active\"/> On:<a class='inlineHelp' data-help='Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third fourth or last day of the week that will appear in a drop down menu to the right.'><i class='icon-question-sign'></i></a></label> <select class='yearday-occurrence-number' disabled><option value='1'>First</option><option value='2'>Second</option><option value='3'>Third</option><option value='4'>Fourth</option><option value='-1'>Last</option></select> <select class='yearday-drop-down' disabled><option value='su'>Sunday</option><option value='mo'>Monday</option><option value='tu'>Tuesday</option><option value='we'>Wednesday</option><option value='th'>Thursday</option><option value='fr'>Friday</option><option value='sa'>Saturday</option><option value='' disabled='disabled'></option><option value='day'>Day</option><option value='weekday'>Weekday</option><option value='weekendday'>Weekend Day</option></select></div>"
 };
 
 /**
@@ -459,6 +459,20 @@ Event_Calendar.Model = (function(){
       }
     },
 
+    setRepeatProperties : function setRepeatProperties(props) {
+      var temp = _.extend({}, data, props);
+      var validationErrors = v.validateEvent(temp);
+      if(validationErrors.length === 0) {
+        data = temp;
+        if(!savedState) savedState = _.extend({}, temp);
+        return this.getEvent();
+      } 
+      else {
+        return new Event_Calendar.Errors.ErrorGroup(null, validationErrors);
+      }
+
+    },
+
     /**
      *  Remove data
      */
@@ -474,6 +488,10 @@ Event_Calendar.Model = (function(){
         }
       });
       return publish("updated", this.getEvent());
+    },
+
+    removeRepeatProperties : function removeRepeatProperties() {
+      removeProperty("freq"); // This will remove all repeat properties
     }
 
   };
@@ -722,6 +740,8 @@ Event_Calendar.Repeat_Settings = (function(){
       pb,
       smScreenBreakPoint = 550,
       closeBtn,
+      cancelBtn,
+      okBtn,
       freqInput,
       intervalInput,
       intervalTimeUnit,
@@ -791,6 +811,8 @@ Event_Calendar.Repeat_Settings = (function(){
 
   function initInputRefs() {
     closeBtn = $( ".close", container);
+    cancelBtn = $( ".cancel", container);
+    okBtn = $( ".ok", container);
     freqInput = $(".freq", container);
     intervalInput = $(".interval", container);
     intervalTimeUnit = $(".intervalTimeUnit", container);
@@ -822,9 +844,9 @@ Event_Calendar.Repeat_Settings = (function(){
     $(window).off("resize").on("resize", _.debounce(function(){
       addAppropriateModalClass();
     }, 500));
-    // Close button
     closeBtn.off().on("click", toggleModal);
-    // Re-render when freq changes
+    cancelBtn.off().on("click", toggleModal);
+    okBtn.off().on("click", save);
     freqInput.off().on("change", freqChange);
   }
 
@@ -841,9 +863,14 @@ Event_Calendar.Repeat_Settings = (function(){
     }
     else {
       model.setProperty("interval", 1);
-      model.removeProperty(["byday","bymonthday","bymonth","bysetpos"]);
+      model.removeProperty(_.without(Event_Calendar.Cfg.REPEAT_PROPERTIES, "freq", "interval"));
       setValues(model.getEvent());
     }
+  }
+
+  function save(evt) {
+    model.setRepeatProperties(getValues());
+    console.log("AFTER SET: model.getEvent(): ", model.getEvent());
   }
 
   /**
@@ -858,13 +885,11 @@ Event_Calendar.Repeat_Settings = (function(){
       }
     }
     else if(endUntilRadio.prop("checked")) {
-      var until;
-      var kendo = untilInput.data("kendoDatePicker");
-      if(kendo) {
-        values.until = kendo.value();
-      }
-      else {
-        values.until = untilInput[0].value;
+      var until,
+          kendo = untilInput.data("kendoDatePicker");
+      until = kendo ? kendo.value() : untilInput[0].value;
+      if( until ) {
+        values.until = until;
       }
     }
   }
@@ -885,11 +910,19 @@ Event_Calendar.Repeat_Settings = (function(){
       }
     }
     else {
-      getMonthDayOccurrenceValue(values);
+      getDayOccurrenceValue(values);
     }
   }
 
-  function getMonthDayOccurrenceValue(values) {
+  function getYearlyValues(values) {
+    getDayOccurrenceValue(values);
+    var bymonth = pb.getSelectedData().map(function(n){ return parseInt(n, 10); });
+    if(bymonth.length > 0) {
+      values.bymonth = bymonth;
+    }
+  }
+
+  function getDayOccurrenceValue(values) {
     var num = values.freq == "monthly" ? monthDayOccurrenceNumberDropDown.val()
                                        : yearDayOccurrenceNumberDropDown.val();
     if(!num) { return; }
@@ -919,8 +952,6 @@ Event_Calendar.Repeat_Settings = (function(){
       freq : freqInput.val(),
       interval : intervalInput.val() || 1,
     };
-    getEndTypeValue(values);
-
     switch(values.freq) {
       case "weekly" :
         getWeeklyValues(values);
@@ -932,8 +963,8 @@ Event_Calendar.Repeat_Settings = (function(){
         getYearlyValues(values);
         break;
       default :
-        console.error("getValues() invalid freq");
     }
+    getEndTypeValue(values);
 
     return values;
   }
@@ -962,7 +993,9 @@ Event_Calendar.Repeat_Settings = (function(){
   }
 
   function setVariableValues(values) {
-    if(values.freq == "weekly") {
+    if(values.freq == "daily") {
+      renderVariableContent("daily");
+    } else if(values.freq == "weekly") {
       renderVariableContent(values.freq);
       pb.set(values.byday || [moment(values.dtstart).format("dd").toLowerCase()]);
     } else if (values.freq == "monthly") {
@@ -992,6 +1025,9 @@ Event_Calendar.Repeat_Settings = (function(){
     monthDayOccurrenceNumberDropDown = $("monthDayOccurrenceNumber", container);
 
     // Numeric month day
+    if(!values.bysetpos && !values.byday) {
+      pb.set(values.bymonthday || [new Date(values.dtstart).getDate()]);
+    }
     if(values.bymonthday) {
       pb.set(values.bymonthday);
     }
@@ -1023,7 +1059,7 @@ Event_Calendar.Repeat_Settings = (function(){
     yearDayDropDown = $(".yearDayDropDown", container);
     yearDayOccurrenceNumberDropDown = $(".yearDayOccurrenceNumber", container);
     
-    pb.set(values.bymonth);
+    pb.set(values.bymonth || [new Date(values.dtstart).getMonth() + 1]);
     if(values.bysetpos && values.byday) {
       if(values.byday.length === 2) {
         yearDayDropDown.val("weekendday");
@@ -1034,11 +1070,9 @@ Event_Calendar.Repeat_Settings = (function(){
       else {
         yearDayDropDown.val("day");
       }
-      yearDayDropDown.css("display", "inline");
       yearDayOccurrenceNumberDropDown.val(values.bysetpos);
     }
     else if(values.byday) {
-      yearDayDropDown.css("display", "inline");
       match = values.byday.match(regex); // "1su" means year day occurrence
       var num = match[1];
       if(num >= -1 && num <= 4) {
@@ -1049,7 +1083,6 @@ Event_Calendar.Repeat_Settings = (function(){
     else {
       yearDayOccurrenceNumberDropDown.val("");
       yearDayDropDown.val("su");
-      yearDayDropDown.css("display", "none");
     }
   }
 
@@ -1083,21 +1116,13 @@ Event_Calendar.Repeat_Settings = (function(){
   /**
    *  Render
    */
-
-  function renderDailyFreq() {
-    container.html(Event_Calendar.Templates.persistent_repeat_inputs);
-    variableContentContainer = $(".variable-content-row", container);
-    values.freq = "weekly";
-    renderVariableContent(values);       
-    addAppropriateModalClass();
-    initInputRefs();
-    initInputs(values);
-    initEvents();
-  }
-
+  
   function renderVariableContent (freq, monthlyDayOfWeek) {
     freq = freq || "";
-    if(freq == "weekly") {
+    if(freq == "daily") {
+      variableContentContainer.html("");
+    }
+    else if(freq == "weekly") {
       variableContentContainer.html(Event_Calendar.Templates.weekly_freq_day_of_week);
       pb = new Event_Calendar.PushButtons(".pushbutton-container", controller);
       pb.render({
@@ -1302,7 +1327,8 @@ Event_Calendar.PushButtons = (function(){
 
   var api = {
     render : render,
-    set : set
+    set : set, 
+    getSelectedData : getSelectedData
   };
 
   PushButtons.prototype = api;

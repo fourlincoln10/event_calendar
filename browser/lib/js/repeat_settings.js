@@ -14,6 +14,8 @@ Event_Calendar.Repeat_Settings = (function(){
       pb,
       smScreenBreakPoint = 550,
       closeBtn,
+      cancelBtn,
+      okBtn,
       freqInput,
       intervalInput,
       intervalTimeUnit,
@@ -83,6 +85,8 @@ Event_Calendar.Repeat_Settings = (function(){
 
   function initInputRefs() {
     closeBtn = $( ".close", container);
+    cancelBtn = $( ".cancel", container);
+    okBtn = $( ".ok", container);
     freqInput = $(".freq", container);
     intervalInput = $(".interval", container);
     intervalTimeUnit = $(".intervalTimeUnit", container);
@@ -114,9 +118,9 @@ Event_Calendar.Repeat_Settings = (function(){
     $(window).off("resize").on("resize", _.debounce(function(){
       addAppropriateModalClass();
     }, 500));
-    // Close button
     closeBtn.off().on("click", toggleModal);
-    // Re-render when freq changes
+    cancelBtn.off().on("click", toggleModal);
+    okBtn.off().on("click", save);
     freqInput.off().on("change", freqChange);
   }
 
@@ -133,9 +137,14 @@ Event_Calendar.Repeat_Settings = (function(){
     }
     else {
       model.setProperty("interval", 1);
-      model.removeProperty(["byday","bymonthday","bymonth","bysetpos"]);
+      model.removeProperty(_.without(Event_Calendar.Cfg.REPEAT_PROPERTIES, "freq", "interval"));
       setValues(model.getEvent());
     }
+  }
+
+  function save(evt) {
+    model.setRepeatProperties(getValues());
+    console.log("AFTER SET: model.getEvent(): ", model.getEvent());
   }
 
   /**
@@ -150,13 +159,11 @@ Event_Calendar.Repeat_Settings = (function(){
       }
     }
     else if(endUntilRadio.prop("checked")) {
-      var until;
-      var kendo = untilInput.data("kendoDatePicker");
-      if(kendo) {
-        values.until = kendo.value();
-      }
-      else {
-        values.until = untilInput[0].value;
+      var until,
+          kendo = untilInput.data("kendoDatePicker");
+      until = kendo ? kendo.value() : untilInput[0].value;
+      if( until ) {
+        values.until = until;
       }
     }
   }
@@ -177,11 +184,19 @@ Event_Calendar.Repeat_Settings = (function(){
       }
     }
     else {
-      getMonthDayOccurrenceValue(values);
+      getDayOccurrenceValue(values);
     }
   }
 
-  function getMonthDayOccurrenceValue(values) {
+  function getYearlyValues(values) {
+    getDayOccurrenceValue(values);
+    var bymonth = pb.getSelectedData().map(function(n){ return parseInt(n, 10); });
+    if(bymonth.length > 0) {
+      values.bymonth = bymonth;
+    }
+  }
+
+  function getDayOccurrenceValue(values) {
     var num = values.freq == "monthly" ? monthDayOccurrenceNumberDropDown.val()
                                        : yearDayOccurrenceNumberDropDown.val();
     if(!num) { return; }
@@ -211,8 +226,6 @@ Event_Calendar.Repeat_Settings = (function(){
       freq : freqInput.val(),
       interval : intervalInput.val() || 1,
     };
-    getEndTypeValue(values);
-
     switch(values.freq) {
       case "weekly" :
         getWeeklyValues(values);
@@ -224,8 +237,8 @@ Event_Calendar.Repeat_Settings = (function(){
         getYearlyValues(values);
         break;
       default :
-        console.error("getValues() invalid freq");
     }
+    getEndTypeValue(values);
 
     return values;
   }
@@ -254,7 +267,9 @@ Event_Calendar.Repeat_Settings = (function(){
   }
 
   function setVariableValues(values) {
-    if(values.freq == "weekly") {
+    if(values.freq == "daily") {
+      renderVariableContent("daily");
+    } else if(values.freq == "weekly") {
       renderVariableContent(values.freq);
       pb.set(values.byday || [moment(values.dtstart).format("dd").toLowerCase()]);
     } else if (values.freq == "monthly") {
@@ -284,6 +299,9 @@ Event_Calendar.Repeat_Settings = (function(){
     monthDayOccurrenceNumberDropDown = $("monthDayOccurrenceNumber", container);
 
     // Numeric month day
+    if(!values.bysetpos && !values.byday) {
+      pb.set(values.bymonthday || [new Date(values.dtstart).getDate()]);
+    }
     if(values.bymonthday) {
       pb.set(values.bymonthday);
     }
@@ -315,7 +333,7 @@ Event_Calendar.Repeat_Settings = (function(){
     yearDayDropDown = $(".yearDayDropDown", container);
     yearDayOccurrenceNumberDropDown = $(".yearDayOccurrenceNumber", container);
     
-    pb.set(values.bymonth);
+    pb.set(values.bymonth || [new Date(values.dtstart).getMonth() + 1]);
     if(values.bysetpos && values.byday) {
       if(values.byday.length === 2) {
         yearDayDropDown.val("weekendday");
@@ -326,11 +344,9 @@ Event_Calendar.Repeat_Settings = (function(){
       else {
         yearDayDropDown.val("day");
       }
-      yearDayDropDown.css("display", "inline");
       yearDayOccurrenceNumberDropDown.val(values.bysetpos);
     }
     else if(values.byday) {
-      yearDayDropDown.css("display", "inline");
       match = values.byday.match(regex); // "1su" means year day occurrence
       var num = match[1];
       if(num >= -1 && num <= 4) {
@@ -341,7 +357,6 @@ Event_Calendar.Repeat_Settings = (function(){
     else {
       yearDayOccurrenceNumberDropDown.val("");
       yearDayDropDown.val("su");
-      yearDayDropDown.css("display", "none");
     }
   }
 
@@ -375,21 +390,13 @@ Event_Calendar.Repeat_Settings = (function(){
   /**
    *  Render
    */
-
-  function renderDailyFreq() {
-    container.html(Event_Calendar.Templates.persistent_repeat_inputs);
-    variableContentContainer = $(".variable-content-row", container);
-    values.freq = "weekly";
-    renderVariableContent(values);       
-    addAppropriateModalClass();
-    initInputRefs();
-    initInputs(values);
-    initEvents();
-  }
-
+  
   function renderVariableContent (freq, monthlyDayOfWeek) {
     freq = freq || "";
-    if(freq == "weekly") {
+    if(freq == "daily") {
+      variableContentContainer.html("");
+    }
+    else if(freq == "weekly") {
       variableContentContainer.html(Event_Calendar.Templates.weekly_freq_day_of_week);
       pb = new Event_Calendar.PushButtons(".pushbutton-container", controller);
       pb.render({
