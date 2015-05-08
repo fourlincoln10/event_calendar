@@ -6,10 +6,25 @@ Event_Calendar.Model = (function(){
   "use strict";
 
   /**
+   * Model Constructor
+   * @param {Object} evt An object containing event properties
+   */
+  function Model(values, cnt){
+    data = {};
+    values = values || defaultValues();
+    savedState = null;
+    controller = cnt;
+    this.setEvent(values);
+  }
+
+
+  /**
    * Private Properties / Functions
    */
-  var v = Event_Calendar.Validate;
-  var data, savedState;
+  var v = Event_Calendar.Validate,
+      data,
+      savedState,
+      controller;
 
   function publish(evtType, data) {
     postal.publish({
@@ -24,6 +39,13 @@ Event_Calendar.Model = (function(){
       topic: topic,
       callback: callback
     });
+  }
+
+  function processOutgoingEvent(values) {
+    Object.keys(values).forEach(function(key){
+      values[key] = processOutgoingProperty(key, values[key]);
+    });
+    return values;
   }
 
   /**
@@ -65,15 +87,19 @@ Event_Calendar.Model = (function(){
     return defaults;
   }
 
-  /**
-   * Model Constructor
-   * @param {Object} evt An object containing event properties
-   */
-  function Model(values){
-    data = {};
-    values = values || defaultValues();
-    savedState = null;
-    this.setEvent(values);
+  function formatTransition(prop, val) {
+    if(prop == "interval" && val) {
+      try { val = parseInt(val, 10); } catch(e) { controller.modelError(e); }
+    }
+    if(prop == "count" && val) {
+      try { val = parseInt(val, 10); } catch(e) { controller.modelError(e); }
+    }
+    if(prop == "until" && val) {
+      var dtstart = moment(data.dtstart);
+      val = moment(val).hours(dtstart.hours()).minutes(dtstart.minutes()).format(Event_Calendar.Cfg.MOMENT_DATE_TIME_FORMAT);
+      val = Event_Calendar.Helpers.convertDateTimeStrToUTC(val);
+    }
+    return val;
   }
 
   /**
@@ -89,7 +115,7 @@ Event_Calendar.Model = (function(){
     },
 
     getProperty : function getProperty(prop) {
-      return data[prop];
+      return _.clone(data[prop]);
     },
 
     getEvent : function getEvent() {
@@ -103,15 +129,17 @@ Event_Calendar.Model = (function(){
       var err;
       if(Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW.indexOf(prop) === -1) {
         err = new Event_Calendar.Errors.UnknownPropertyError("Unknown property", prop);
-        return publish("error", err);
+        return controller.modelError(err);
       }
       // If setting to "", null etc. remove instead
-      if(!prop) {
+      if(!val) {
         return this.removeProperty(prop);
       }
+      // Format/Validate individual property
+      val = formatTransition(prop, val);
       if(!v.validateProperty(prop, val)) {
         err = new Event_Calendar.Errors.InvalidError("Invalid " + prop, prop);
-        return publish("error", err);
+        return controller.modelError(err);
       }
       // Validate event as a whole so errors involving multiple properties are caught.
       var e = this.getEvent();
@@ -119,8 +147,9 @@ Event_Calendar.Model = (function(){
       var validationErrors = v.validateEvent(e);
       if(validationErrors.length > 0) {
         err = new Event_Calendar.Errors.ErrorGroup("", validationErrors);
-        return publish("error", err);
+        return controller.modelError(err);
       }
+      // Success!
       data[prop] = val;
       return publish("updated", e);
     },
@@ -131,30 +160,31 @@ Event_Calendar.Model = (function(){
       evt = _.pick(evt, _.identity); // Only allow properties that have a truthy value
       var temp = _.extend({}, data, evt);
       if(!temp.freq) temp = _.omit(temp, Event_Calendar.Cfg.REPEAT_PROPERTIES);
+      Object.keys(temp).forEach(function(key){temp[key] = formatTransition(key, temp[key]);});
       var validationErrors = v.validateEvent(temp);
       if(validationErrors.length === 0) {
         data = temp;
-        if(!savedState) savedState = _.extend({}, temp);
         return publish("updated", this.getEvent());
       } 
       else {
         var err = new Event_Calendar.Errors.ErrorGroup(null, validationErrors);
-        return publish("error", err);
+        return controller.modelError(err);
       }
     },
 
     setRepeatProperties : function setRepeatProperties(props) {
-      var temp = _.extend({}, data, props);
+      var temp = _.extend({}, _.omit(data, Event_Calendar.Cfg.REPEAT_PROPERTIES), props);
+      Object.keys(temp).forEach(function(key){temp[key] = formatTransition(key, temp[key]);});
       var validationErrors = v.validateEvent(temp);
       if(validationErrors.length === 0) {
         data = temp;
-        if(!savedState) savedState = _.extend({}, temp);
+        if(!savedState) savedState = _.extend({}, data);
         return this.getEvent();
       } 
       else {
-        return new Event_Calendar.Errors.ErrorGroup(null, validationErrors);
+        var err = new Event_Calendar.Errors.ErrorGroup(null, validationErrors);
+        return controller.modelError(err);
       }
-
     },
 
     /**
@@ -175,9 +205,16 @@ Event_Calendar.Model = (function(){
     },
 
     removeRepeatProperties : function removeRepeatProperties() {
-      removeProperty("freq"); // This will remove all repeat properties
-    }
+      this.removeProperty("freq"); // This will remove all repeat properties
+    },
 
+    /**
+     * Save
+     */
+    save : function save() {
+      // Insert save to server code here.
+      // if(!savedState) savedState = _.extend({}, temp);
+    }
   };
 
   return Model;

@@ -13,7 +13,7 @@ Event_Calendar.Errors = (function(){
    * @return undefined Use the new operator when instantiating e.g. new InvalidError("a msg");
    */
 function InvalidError(msg, eventProp) {
-   Error.captureStackTrace(this);
+   if(Error.captureStackTrace) if(Error.captureStackTrace) Error.captureStackTrace(this);
    this.message = msg || "Invalid";
    this.eventProperty = eventProp || "";
 }
@@ -21,7 +21,7 @@ InvalidError.prototype = Object.create(Error.prototype);
 
 
 function UnknownPropertyError(msg, eventProp) {
-   Error.captureStackTrace(this);
+   if(Error.captureStackTrace) Error.captureStackTrace(this);
    this.message = msg || "Unknown Property";
    this.eventProperty = eventProp || "";
 }
@@ -29,7 +29,7 @@ UnknownPropertyError.prototype = Object.create(Error.prototype);
 
 
 function RequiredError(msg, eventProp) {
-   Error.captureStackTrace(this);
+   if(Error.captureStackTrace) Error.captureStackTrace(this);
    this.message = msg || "Required";
    this.eventProperty = eventProp || "";
 }
@@ -42,7 +42,7 @@ RequiredError.prototype = Object.create(Error.prototype);
   * @return undefined Use the new operator when instantiating e.g. new InvalidError("a msg");
   */
 function ErrorGroup(msg, errors) {
-   Error.captureStackTrace(this);
+   if(Error.captureStackTrace) Error.captureStackTrace(this);
    this.message = msg || "One or more errors were detected";
    this.errors = errors || [];
 }

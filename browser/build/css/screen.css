@@ -1,6 +1,8 @@
 .edit-event-container {
   font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   font-size: .9em; }
+  .edit-event-container .error {
+    color: #ff0000; }
   .edit-event-container .row {
     margin-bottom: 1.3em; }
   .edit-event-container label {
@@ -34,7 +36,7 @@
       width: 34%; }
   .edit-event-container .prefix {
     display: inline-block;
-    min-width: 9%;
+    min-width: 11%;
     text-align: right; }
   .edit-event-container .allday-row label {
     display: inline-block; }
@@ -68,9 +70,12 @@
   .repeat-settings-container .weekday-row, .repeat-settings-container .monthday-numeric-row, .repeat-settings-container .monthday-occurrence-row, .repeat-settings-container .year-month-row {
     overflow: hidden;
     position: relative; }
-    .repeat-settings-container .weekday-row > *, .repeat-settings-container .monthday-numeric-row > *, .repeat-settings-container .monthday-occurrence-row > *, .repeat-settings-container .year-month-row > * {
+    .repeat-settings-container .weekday-row label, .repeat-settings-container .weekday-row .pushButtonsTable, .repeat-settings-container .weekday-row select, .repeat-settings-container .monthday-numeric-row label, .repeat-settings-container .monthday-numeric-row .pushButtonsTable, .repeat-settings-container .monthday-numeric-row select, .repeat-settings-container .monthday-occurrence-row label, .repeat-settings-container .monthday-occurrence-row .pushButtonsTable, .repeat-settings-container .monthday-occurrence-row select, .repeat-settings-container .year-month-row label, .repeat-settings-container .year-month-row .pushButtonsTable, .repeat-settings-container .year-month-row select {
       display: inline-block;
       float: left; }
+  .repeat-settings-container .monthday-occurrence-row label {
+    display: block;
+    float: none; }
   .repeat-settings-container .monthday-occurrence-number {
     margin-top: 2px; }
   .repeat-settings-container .weekday-container, .repeat-settings-container .year-month-container, .repeat-settings-container .monthday-container {
@@ -132,25 +137,27 @@
       float: none; }
     .modal-slidedown .monthday-row .monthday-container {
       padding: 0 0 0 10px; }
-  .modal-slidedown .year-month-row > label, .modal-slidedown .weekday-row > label {
+  .modal-slidedown .monthday-numeric-row > label, .modal-slidedown .year-month-row > label, .modal-slidedown .weekday-row > label {
     display: block;
     float: none; }
   .modal-slidedown .weekday-container, .modal-slidedown .year-month-container {
     padding-left: 0; }
-  .modal-slidedown .end-type [type=radio] {
-    height: auto;
-    line-height: auto; }
-  .modal-slidedown .end-type label {
-    font-size: 1.1em;
-    text-transform: none; }
-  .modal-slidedown .end-type label:not(:last-child) {
-    margin-bottom: 1em;
-    padding-bottom: 0; }
-  .modal-slidedown .end-type .prefix {
-    min-width: 11%; }
+  .modal-slidedown .end-type {
+    font-size: 1.1em; }
+    .modal-slidedown .end-type div {
+      margin: 0 0 1em 0; }
+    .modal-slidedown .end-type [type=radio] {
+      height: auto;
+      line-height: auto; }
+    .modal-slidedown .end-type label {
+      text-transform: none;
+      display: inline; }
+    .modal-slidedown .end-type .prefix {
+      min-width: 11%; }
 
 .modal-window {
   background: #fff;
+  border: 1px solid #ccc;
   box-shadow: 0 3px 4px 3px #ccc;
   height: auto;
   left: 50%;
@@ -185,7 +192,7 @@
     padding-right: 1%;
     text-align: right;
     width: 19%; }
-  .modal-window [type=text], .modal-window [type=text]:disabled, .modal-window [type=number] {
+  .modal-window .interval, .modal-window .dtstart, .modal-window .count {
     border: 1px solid #ccc;
     padding: 2px;
     font-size: 1em; }
@@ -204,15 +211,13 @@
       float: left; }
   .modal-window .end-type {
     overflow: hidden; }
+    .modal-window .end-type div {
+      margin: 0 0 7px 0; }
     .modal-window .end-type .prefix {
       display: inline; }
     .modal-window .end-type label {
       font-weight: normal;
-      margin-bottom: 10px;
-      text-align: left;
-      width: 100%; }
-    .modal-window .end-type label:last-of-type {
-      display: inline; }
+      text-align: left; }
 
 .modal-window.show {
   opacity: 1;

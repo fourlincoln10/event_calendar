@@ -77,6 +77,7 @@ gulp.task("concat-js", function(){
     "./lib/js/global.js",
     "./lib/js/cfg.js",
     "./lib/js/errors.js",
+    "./lib/js/error_handler.js",
     "./lib/js/helpers.js",
     "./lib/js/validate.js",
     "./lib/js/templates.js",

@@ -20,34 +20,47 @@ if (typeof Event_Calendar === "undefined") {
  * @type {Object}
  */
 Event_Calendar.Cfg = {
+  SM_SCREEN_BREAKPOINT        : 550,
+  MODAL_WINDOW_CLASS          : "modal-window",
+  MODAL_SLIDEDOWN_CLASS       : "modal-slidedown",
   FREQ_VALUES                 : ["daily", "weekly", "monthly", "yearly"],
   BYDAY_VALUES                : ["su", "mo", "tu", "we", "th", "fr", "sa", "day", "weekday", "weekendday"],
   BYDAY_REGEX                 : /^(-?[1-4]?)(su|mo|tu|we|th|fr|sa)$/, // /^(-?[1-4]?)([a-z]+)/
   BY_MONTH_VALUES             : ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"],
-  FIELDS_MANAGED_BY_VIEW      : ["dtstart", "dtend", "freq","interval", "byday","bymonthday","bymonth","bysetpos","count","until", "summary", "description"],
+  FIELDS_MANAGED_BY_VIEW      : ["dtstart", "dtend", "freq","interval", "byday","bymonthday","bymonth","bysetpos","count","until", "summary", "location", "description"],
   REPEAT_PROPERTIES           : ["freq","interval","byday","bymonthday","bymonth","bysetpos","count","until"],
   UID_REGEX                   : /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-  ISO_DATETIME_REGEX          : /^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5](\d:[0-5])?\dZ?$/,
+  ISO_DATETIME_REGEX          : /^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d(:[0-5]\d)?Z?$/,
   ISO_DATE_REGEX              : /^\d{4}-[01]\d-[0-3]\d$/,
+  KENDO_DATE_PARSE_FORMATS    : [
+                                  "yyyy-MM-dd", "MM/dd/yyyy", "MM/d/yyyy", "M/dd/yyyy", "M/d/yyyy", "MM/dd/yy", "MM/d/yy", "M/dd/yy", "M/d/yy",
+                                  "MM.dd.yyyy", "MM.d.yyyy", "M.dd.yyyy", "M.d.yyyy", "MM.dd.yy", "MM.d.yy", "M.dd.yy", "M.d.yy",
+                                  "MM-dd-yyyy", "MM-d-yyyy", "M-dd-yyyy", "M-d-yyyy", "MM-dd-yy", "MM-d-yy", "M-dd-yy", "M-d-yy",
+                                  "MM dd yyyy", "MM d yyyy", "M dd yyyy", "M d yyyy", "MM dd yy", "MM d yy", "M dd yy", "M d yy",
+                                ],
   MOMENT_DATE_FORMAT          : "YYYY-MM-DD",
   MOMENT_24_HR_TIME_FORMAT    : "HH:mm",
   MOMENT_12_HR_TIME_FORMAT    : "hh:mm A",
   MOMENT_DATE_TIME_FORMAT     : "YYYY-MM-DDTHH:mm",
   MOMENT_DATE_DISPLAY_FORMAT  : "MM/DD/YYYY",
-  FREQ_ERR_MSG                : "You must choose never,daily,weekly,monthly or yearly",
-  INTERVAL_ERR_MSG            : "Must be empty or an integer >= 1",
-  DTSTART_ERR_MSG             : "Please enter a valid date > 01/01/1970. Format: mm/dd/yyyy hh:mm AM|PM",
-  DTSTART_REQUIRED_ERR_MSG    : "Start date is required",
-  DTEND_REQUIRED_ERR_MSG      : "End date is required",
+  WEEKDAYS                    : ["mo", "tu", "we", "th", "fr"],
+  WEEKEND_DAYS                : ["sa", "su"],
+  DAYS_OF_THE_WEEK            : ["su", "mo", "tu", "we", "th", "fr", "sa"],
+  DAY_OCCURRENCE_REGEX        : /^(-?[1-4]?)([a-z]+)/,
+  FREQ_ERR_MSG                : "Invalid frequency",
+  INTERVAL_ERR_MSG            : "Must be an integer >= 1",
+  DTSTART_ERR_MSG             : "Enter as mm/dd/yyyy > 01/01/1970",
+  DTSTART_REQUIRED_ERR_MSG    : "Required",
+  DTEND_REQUIRED_ERR_MSG      : "Required",
   END_BEFORE_START_ERR_MSG    : "End date must be after start date",
   DTSTART_TOO_OLD_ERR_MSG     : "Start date too far in past",
   COUNT_ERR_MSG               : "Must be empty or an integer >= 1",
-  UNTIL_ERR_MSG               : "Please enter a valid date: mm/dd/yyyy hh:mm AM|PM",
-  COUNT_AND_UNTIL_ERR_MSG     : "count and until cannot both be specified",
+  UNTIL_ERR_MSG               : "Enter as mm/dd/yyyy > 01/01/1970",
+  COUNT_AND_UNTIL_ERR_MSG     : "Can't have both count and until",
   BYDAY_ERR_MSG               : "Invalid byday",
-  BYMONTHDAY_ERR_MSG          : "Must be an integer between 1 and 31 (inclusive)",
-  BYMONTH_ERR_MSG             : "Must be an integer between 1 and 12 (inclusive)",
-  BYSETPOS_ERR_MSG            : "Must be between 1 and 4 (inclusive) or -1",
+  BYMONTHDAY_ERR_MSG          : "Integer between 1 and 31 (inclusive)",
+  BYMONTH_ERR_MSG             : "Integer between 1 and 12 (inclusive)",
+  BYSETPOS_ERR_MSG            : "Integer between 1 and 4 (inclusive) or -1",
   MULT_MONTHS_AND_OCC_ERR_MSG : "1 month limit when \"On\" set to multi-day"
 };
   
@@ -66,7 +79,7 @@ Event_Calendar.Errors = (function(){
    * @return undefined Use the new operator when instantiating e.g. new InvalidError("a msg");
    */
 function InvalidError(msg, eventProp) {
-   Error.captureStackTrace(this);
+   if(Error.captureStackTrace) if(Error.captureStackTrace) Error.captureStackTrace(this);
    this.message = msg || "Invalid";
    this.eventProperty = eventProp || "";
 }
@@ -74,7 +87,7 @@ InvalidError.prototype = Object.create(Error.prototype);
 
 
 function UnknownPropertyError(msg, eventProp) {
-   Error.captureStackTrace(this);
+   if(Error.captureStackTrace) Error.captureStackTrace(this);
    this.message = msg || "Unknown Property";
    this.eventProperty = eventProp || "";
 }
@@ -82,7 +95,7 @@ UnknownPropertyError.prototype = Object.create(Error.prototype);
 
 
 function RequiredError(msg, eventProp) {
-   Error.captureStackTrace(this);
+   if(Error.captureStackTrace) Error.captureStackTrace(this);
    this.message = msg || "Required";
    this.eventProperty = eventProp || "";
 }
@@ -95,7 +108,7 @@ RequiredError.prototype = Object.create(Error.prototype);
   * @return undefined Use the new operator when instantiating e.g. new InvalidError("a msg");
   */
 function ErrorGroup(msg, errors) {
-   Error.captureStackTrace(this);
+   if(Error.captureStackTrace) Error.captureStackTrace(this);
    this.message = msg || "One or more errors were detected";
    this.errors = errors || [];
 }
@@ -114,6 +127,107 @@ return api;
 })();
 
 /**
+ * 
+ * Error Handler
+ */
+
+Event_Calendar.ErrorHandler = (function(){
+  "use strict";
+  
+  var container;
+  
+  function ErrorHandler(cnt) {
+    container = cnt;
+  }
+  
+  function errorsPresent() {
+    return $(".error", container).length > 0;
+  }
+  function errorClass(prop) {
+    return prop ? "error " + prop + "Error" : "error";
+  }
+  function removeAll() {
+    $(".error", container).remove();
+  }
+  function removePropError(prop) {
+    var cls = errorClass(prop);
+    if(cls) {
+      $("." + cls, container).remove();
+    }
+  }
+  function insertInDom(msg, prop) {
+      if( !prop ) return console.error(msg);
+      var html = "<div class='" + errorClass(prop) + "'>" + msg + "</div>";
+      // summary
+      if( prop == "summary" ) {
+        $(".title-row label:first-of-type", container).after(html);
+      } 
+      // dtstart, dtstartdate, dtstarttime, dtend, dtenddate, dtstarttime
+      else if(    prop == "dtstart" ||  prop == "dtstartdate" || prop == "dtstarttime" ||
+                  prop == "dtend"   ||  prop == "dtenddate"   || prop == "dtendtime"  )  {
+        $(".date-row label:first-of-type", container).after(html);
+      }
+      // location
+      else if( prop == "location" ) {
+        $(".location-row label:first-of-type", container).after(html);
+      }
+      // description
+      else if( prop == "description" ) {
+        $(".description-row label:first-of-type", container).after(html);
+      }
+      // freq
+      else if( prop == "freq" ) {
+        $(".freq-row", container).prepend(html);
+      }
+      // interval
+      else if( prop == "interval" ) {
+        $(".interval-row", container).prepend(html);
+      }
+      // count, until
+      else if ( prop == "until" || prop == "count" ) {
+        $(".end-row", container).prepend(html);
+      }
+      // byday
+      else if ( prop == "byday" ) {
+        $(".weekday-row, .monthday-occurrence-row, .year-day-row", container).prepend(html);
+      }
+      // bymonthday
+      else if (prop == "bymonthday") {
+        $(".monthday-numeric-row", container).prepend(html);
+      }
+      // bysetpos
+      else if ( prop == "bysetpos" ) {
+        $(".monthday-occurrence-row, .year-day-row", container).prepend(html);
+      }
+      // bymonth
+      else if ( prop == "bymonth" ) {
+        $(".year-month-row", container).prepend(html);
+      }
+      // unknown property
+      else {
+        console.error("Unknown property: " + prop);
+        console.error("Error msg: ", msg);
+      }
+  }
+  
+  function render(err) {
+    err = err.errors || [err];
+    err.forEach(function(e) {
+      insertInDom(e.message, e.eventProperty);
+    });
+  }
+
+  // API
+  ErrorHandler.prototype = {
+    render : render, 
+    removePropError : removePropError,
+    removeAll : removeAll
+  };
+
+  return ErrorHandler;
+})();
+
+/**
  * Helpers
  * @type {Object}
  */
@@ -125,6 +239,20 @@ Event_Calendar.Helpers = {
    */
   isInteger : function isInteger(i) {
     return typeof i !== "undefined" && !isNaN(parseInt(i, 10)) && Math.floor(i) == i;
+  },
+
+  convertDateTimeStrToUTC : function convertDateTimeStrToUTC(dtstr) {
+    if(dtstr.slice(-1) !== "Z") {
+      dtstr = moment(dtstr).utc().format("YYYY-MM-DDTHH:mm") + "Z";
+    }
+    return dtstr;
+  },
+
+  convertDateTimeStrToLocal: function convertDateTimeStrToLocal(dtstr) {
+    if(dtstr.slice(-1) == "Z") {
+      dtstr = moment(dtstr).local().format("YYYY-MM-DDTHH:mm");
+    }
+    return dtstr;
   }
 
 };
@@ -306,12 +434,11 @@ Event_Calendar.Validate = {
 Event_Calendar.Templates = {
   "basic_inputs": "<div class=\"basic-inputs\"><div class=\"save-button-row row\"> <button class=\"save-button\" title=\"Save\">Save</button></div><div class=\"title-row row\"> <label>Title</label> <input type=\"text\" title=\"Event Title\" class=\"summary\" /></div><div class=\"date-row row\"> <label>Start/End</label> <span class=\"dtstart-group\"><span class=\"dtstart-prefix prefix\">From</span> <input type=\"date\" title=\"From Date\" class=\"dtstart-date\" /> <span class=\"dtstart-separator separator\">at</span> <input type=\"time\" title=\"From Time\" class=\"dtstart-time\" /></span> <span class=\"dtend-group\"><span class=\"dtend-prefix prefix\">To</span> <input type=\"date\" title=\"To Date\" class=\"dtend-date\" /> <span class=\"dtend-separator separator\">at</span> <input type=\"time\" title=\"To Time\" class=\"dtend-time\" /></span></div><div class=\"allday-row row\"> <label>All Day <input type=\"checkbox\" title=\"All Day\" class=\"allday\" /></label></div><div class=\"repeat-row row\"> <label>Repeat <input type=\"checkbox\" title=\"Repeat\" class=\"repeat\" /><span class=\"repeat-msg\"></span></label></div><div class=\"location-row row\"> <label>Location</label> <input type=\"text\" title=\"Event Location\" class=\"location\" /></div><div class=\"description-row row\"> <label>Description</label><textarea class=\"description\"></textarea></div></div>",
   "entry_container": "<div class=\"edit-event-container\"><div class=\"basic-inputs-container\"></div><div class=\"repeat-settings-container\"></div></div>",
-  "monthly_freq_day_of_week": "<div class='monthday-row row'> <label><input type=\"radio\" class=\"monthday-occurence-active\"/> On:<a class='inlineHelp' data-help='Select \"Day\" and one of the days of the month if the event needs to repeat on one or more days of the month e.g. the 1st and the 15th. Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third, fourth or last day of the week. A drop down menu will appear to the right so you can choose the day of the week.'><i class='icon-question-sign'></i></a></label> <select class='monthday-occurrence-number'><option value='day'>Day</option><option value='' disabled='disabled'></option><option value='1'>First</option><option value='2'>Second</option><option value='3'>Third</option><option value='4'>Fourth</option><option value='-1'>Last</option></select><div class='monthday-container'><div class='select-container'> <select class='month-day-dropdown'><option value='su'>Sunday</option><option value='mo'>Monday</option><option value='tu'>Tuesday</option><option value='we'>Wednesday</option><option value='th'>Thursday</option><option value='fr'>Friday</option><option value='sa'>Saturday</option><option value='' disabled='disabled'></option><option value='day'>Day</option><option value='weekday'>Weekday</option><option value='weekendday'>Weekend Day</option></select></div></div></div>",
-  "monthly_freq_numeric_day": "<div class='row monthday-numeric-row'> <label><input type=\"radio\" name=\"active-monthday-type\" class=\"monthday-occurence-active\" checked /> Each:<a class='inlineHelp' data-help='Select \"Day\" and one of the days of the month if the event needs to repeat on one or more days of the month e.g. the 1st and the 15th. Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third, fourth or last day of the week. A drop down menu will appear to the right so you can choose the day of the week.'><i class='icon-question-sign'></i></a></label><div class='monthday-container'><div class='pushbutton-container'></div></div></div><div class='row monthday-occurrence-row'> <label><input type=\"radio\" name=\"active-monthday-type\" class=\"monthday-occurence-active\" /> On the:<a class='inlineHelp' data-help='Select \"Day\" and one of the days of the month if the event needs to repeat on one or more days of the month e.g. the 1st and the 15th. Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third, fourth or last day of the week. A drop down menu will appear to the right so you can choose the day of the week.'><i class='icon-question-sign'></i></a></label> <select class='monthday-occurrence-number' disabled><option value='1'>First</option><option value='2'>Second</option><option value='3'>Third</option><option value='4'>Fourth</option><option value='-1'>Last</option></select><div class='monthday-container'><div class='select-container'> <select class='month-day-dropdown' disabled><option value='su'>Sunday</option><option value='mo'>Monday</option><option value='tu'>Tuesday</option><option value='we'>Wednesday</option><option value='th'>Thursday</option><option value='fr'>Friday</option><option value='sa'>Saturday</option><option value='' disabled='disabled'></option><option value='day'>Day</option><option value='weekday'>Weekday</option><option value='weekendday'>Weekend Day</option></select></div></div></div>",
-  "persistent_repeat_inputs": "<div class=\"content\"> <button class=\"close\">&#xd7;</button><h3 class=\"title\">Repeat Settings</h3><div class='freq-row row'> <label>Repeats:<a class='inlineHelp' data-help='The unit of time used to determine how often the event should repeat e.g. monthly. Defaults to \"never\".'><i class='icon-question-sign'></i></a></label> <select class='freq'><option value='daily'>Daily</option><option value='weekly'>Weekly</option><option value='monthly'>Monthly</option><option value='yearly'>Yearly</option></select><div class='nextOccurrence'></div></div><div class='interval-row row'> <label>Every:<a class='inlineHelp' data-help='This value works with the \"repeats\" unit of time to determine how often the event will repeat e.g. 2 with \"monthly\" means every 2 months. Defaults to 1 if you leave this blank.'><i class='icon-question-sign'></i></a></label> <input type='number' class='interval' min='1' pattern=\"\\d*\"/><span class='intervalTimeUnit'></span></div><div class=\"variable-content-row row\"></div><div class='dtstart-row row'> <label>Starting:<a class='inlineHelp' data-help='The date and time the event starts repeating. You should make this the date and time you want the event to initially appear.'><i class='icon-question-sign'></i></a></label> <input type='text' class='dtstart' /></div><div class='end-row row'> <label>Ending:<a class='inlineHelp' data-help='These buttons allow you to choose when the event should stop repeating. Choose \"After\" if you want to limit the event to a certain number of occurrences. Choose \"Until\" if you want the event to stop repeating on a specific date and time.'><i class='icon-question-sign'></i></a></label><div class=\"end-type\"> <label><input type=\"radio\" name=\"end-type\" class=\"never-rb\" /> <span class=\"prefix\">Never</span></label> <label><input type=\"radio\" name=\"end-type\" class=\"count-rb\" /> <span class=\"prefix\">After</span> <input type=\"number\" class=\"count\" min=\"1\" pattern=\"\\d*\"/> <span class=\"suffix\">occurrence(s)</span></label> <label><input type=\"radio\" name=\"end-type\" class=\"until-rb\" /> <span class=\"prefix\">On</span></label> <input type=\"date\" class=\"until\"/></div></div><div class=\"repeat-settings\"></div><div class='button-row row'> <button class='ok'>Ok</button> &nbsp; <button class='cancel'>Cancel</button></div></div>",
+  "monthly_inputs": "<div class='row monthday-numeric-row'> <label><input type=\"radio\" name=\"active-monthday-type\" class=\"monthday-numeric-active\" checked /> Each:<a class='inlineHelp' data-help='Select \"Day\" and one of the days of the month if the event needs to repeat on one or more days of the month e.g. the 1st and the 15th. Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third, fourth or last day of the week. A drop down menu will appear to the right so you can choose the day of the week.'><i class='icon-question-sign'></i></a></label><div class='monthday-container'><div class='pushbutton-container'></div></div></div><div class='row monthday-occurrence-row'> <label><input type=\"radio\" name=\"active-monthday-type\" class=\"monthday-occurrence-active\" /> On the:<a class='inlineHelp' data-help='Select \"Day\" and one of the days of the month if the event needs to repeat on one or more days of the month e.g. the 1st and the 15th. Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third, fourth or last day of the week. A drop down menu will appear to the right so you can choose the day of the week.'><i class='icon-question-sign'></i></a></label> <select class='monthday-occurrence-number' disabled><option value='1'>First</option><option value='2'>Second</option><option value='3'>Third</option><option value='4'>Fourth</option><option value='-1'>Last</option></select><div class='monthday-container'><div class='select-container'> <select class='monthday-weekday-dropdown' disabled><option value='su'>Sunday</option><option value='mo'>Monday</option><option value='tu'>Tuesday</option><option value='we'>Wednesday</option><option value='th'>Thursday</option><option value='fr'>Friday</option><option value='sa'>Saturday</option><option value='' disabled='disabled'></option><option value='day'>Day</option><option value='weekday'>Weekday</option><option value='weekendday'>Weekend Day</option></select></div></div></div>",
+  "persistent_repeat_inputs": "<div class=\"content\"> <button class=\"close\">&#xd7;</button><h3 class=\"title\">Repeat Settings</h3><div class='freq-row row'> <label>Repeats:<a class='inlineHelp' data-help='The unit of time used to determine how often the event should repeat e.g. monthly. Defaults to \"never\".'><i class='icon-question-sign'></i></a></label> <select class='freq'><option value='daily'>Daily</option><option value='weekly'>Weekly</option><option value='monthly'>Monthly</option><option value='yearly'>Yearly</option></select><div class='nextOccurrence'></div></div><div class='interval-row row'> <label>Every:<a class='inlineHelp' data-help='This value works with the \"repeats\" unit of time to determine how often the event will repeat e.g. 2 with \"monthly\" means every 2 months. Defaults to 1 if you leave this blank.'><i class='icon-question-sign'></i></a></label> <input type='number' class='interval' min='1' pattern=\"\\d*\"/><span class='intervalTimeUnit'></span></div><div class=\"variable-content-row row\"></div><div class='dtstart-row row'> <label>Starting:<a class='inlineHelp' data-help='The date and time the event starts repeating. You should make this the date and time you want the event to initially appear.'><i class='icon-question-sign'></i></a></label> <input type='text' class='dtstart' /></div><div class='end-row row'> <label>Ending:<a class='inlineHelp' data-help='These buttons allow you to choose when the event should stop repeating. Choose \"After\" if you want to limit the event to a certain number of occurrences. Choose \"Until\" if you want the event to stop repeating on a specific date and time.'><i class='icon-question-sign'></i></a></label><div class=\"end-type\"><div> <label><input type=\"radio\" name=\"end-type\" class=\"never-rb\" /> <span class=\"prefix\">Never</span></label></div><div> <label><input type=\"radio\" name=\"end-type\" class=\"count-rb\" /> <span class=\"prefix\">After</span></label> <input type=\"number\" class=\"count\" min=\"1\" pattern=\"\\d*\" disabled/> <span class=\"suffix\">occurrence(s)</span></div><div> <label><input type=\"radio\" name=\"end-type\" class=\"until-rb\" /> <span class=\"prefix\">On</span></label> <input type=\"date\" class=\"until\" disabled/></div></div></div><div class=\"repeat-settings\"></div><div class='button-row row'> <button class='ok'>Ok</button> &nbsp; <button class='cancel'>Cancel</button></div></div>",
   "quick_entry_inputs": "<div class=\"dtstart-group\"><h2>Start Date</h2><div class=\"dtstart-inputs\"> <input class=\"ds-date\" title=\"From date\"> <input class=\"ds-time\" title=\"From time\"></div></div><div class=\"dtend-group\"><h2>End Date</h2><div class=\"dtend-inputs\"> <input class=\"de-date\" title=\"End date\"> <input class=\"de-time\" title=\"End time\"></div></div><div class=\"summary-group\"><h2>Summary</h2><div class=\"summary\"><textarea class=\"summary\"></textarea></div></div><div class=\"submit-button\"></div>",
-  "weekly_freq_day_of_week": "<div class='weekday-row row'> <label>On:<a class='inlineHelp' data-help='Use this value if the event needs to repeat on one or more days of the week e.g. Monday and Wednesday.'><i class='icon-question-sign'></i></a></label><div class='weekday-container pushbutton-container'></div></div>",
-  "yearly_freq_month_selection": "<div class='year-month-row row'> <label>In:<a class='inlineHelp' data-help='You can limit the months the event will repeat in by selecting one or more months.'><i class='icon-question-sign'></i></a></label><div class='year-month-container pushbutton-container'></div></div><div class='year-day-row row'> <label><input type=\"checkbox\" class=\"year-day-occurrence-active\"/> On:<a class='inlineHelp' data-help='Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third fourth or last day of the week that will appear in a drop down menu to the right.'><i class='icon-question-sign'></i></a></label> <select class='yearday-occurrence-number' disabled><option value='1'>First</option><option value='2'>Second</option><option value='3'>Third</option><option value='4'>Fourth</option><option value='-1'>Last</option></select> <select class='yearday-drop-down' disabled><option value='su'>Sunday</option><option value='mo'>Monday</option><option value='tu'>Tuesday</option><option value='we'>Wednesday</option><option value='th'>Thursday</option><option value='fr'>Friday</option><option value='sa'>Saturday</option><option value='' disabled='disabled'></option><option value='day'>Day</option><option value='weekday'>Weekday</option><option value='weekendday'>Weekend Day</option></select></div>"
+  "weekly_inputs": "<div class='weekday-row row'> <label>On:<a class='inlineHelp' data-help='Use this value if the event needs to repeat on one or more days of the week e.g. Monday and Wednesday.'><i class='icon-question-sign'></i></a></label><div class='weekday-container pushbutton-container'></div></div>",
+  "yearly_inputs": "<div class='year-month-row row'> <label>In:<a class='inlineHelp' data-help='You can limit the months the event will repeat in by selecting one or more months.'><i class='icon-question-sign'></i></a></label><div class='year-month-container pushbutton-container'></div></div><div class='year-day-row row'> <label><input type=\"checkbox\" class=\"year-day-occurrence-active\"/> On:<a class='inlineHelp' data-help='Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third fourth or last day of the week that will appear in a drop down menu to the right.'><i class='icon-question-sign'></i></a></label> <select class='yearday-occurrence-number' disabled><option value='1'>First</option><option value='2'>Second</option><option value='3'>Third</option><option value='4'>Fourth</option><option value='-1'>Last</option></select> <select class='yearday-drop-down' disabled><option value='su'>Sunday</option><option value='mo'>Monday</option><option value='tu'>Tuesday</option><option value='we'>Wednesday</option><option value='th'>Thursday</option><option value='fr'>Friday</option><option value='sa'>Saturday</option><option value='' disabled='disabled'></option><option value='day'>Day</option><option value='weekday'>Weekday</option><option value='weekendday'>Weekend Day</option></select></div>"
 };
 
 /**
@@ -322,10 +449,25 @@ Event_Calendar.Model = (function(){
   "use strict";
 
   /**
+   * Model Constructor
+   * @param {Object} evt An object containing event properties
+   */
+  function Model(values, cnt){
+    data = {};
+    values = values || defaultValues();
+    savedState = null;
+    controller = cnt;
+    this.setEvent(values);
+  }
+
+
+  /**
    * Private Properties / Functions
    */
-  var v = Event_Calendar.Validate;
-  var data, savedState;
+  var v = Event_Calendar.Validate,
+      data,
+      savedState,
+      controller;
 
   function publish(evtType, data) {
     postal.publish({
@@ -340,6 +482,13 @@ Event_Calendar.Model = (function(){
       topic: topic,
       callback: callback
     });
+  }
+
+  function processOutgoingEvent(values) {
+    Object.keys(values).forEach(function(key){
+      values[key] = processOutgoingProperty(key, values[key]);
+    });
+    return values;
   }
 
   /**
@@ -381,15 +530,19 @@ Event_Calendar.Model = (function(){
     return defaults;
   }
 
-  /**
-   * Model Constructor
-   * @param {Object} evt An object containing event properties
-   */
-  function Model(values){
-    data = {};
-    values = values || defaultValues();
-    savedState = null;
-    this.setEvent(values);
+  function formatTransition(prop, val) {
+    if(prop == "interval" && val) {
+      try { val = parseInt(val, 10); } catch(e) { controller.modelError(e); }
+    }
+    if(prop == "count" && val) {
+      try { val = parseInt(val, 10); } catch(e) { controller.modelError(e); }
+    }
+    if(prop == "until" && val) {
+      var dtstart = moment(data.dtstart);
+      val = moment(val).hours(dtstart.hours()).minutes(dtstart.minutes()).format(Event_Calendar.Cfg.MOMENT_DATE_TIME_FORMAT);
+      val = Event_Calendar.Helpers.convertDateTimeStrToUTC(val);
+    }
+    return val;
   }
 
   /**
@@ -405,7 +558,7 @@ Event_Calendar.Model = (function(){
     },
 
     getProperty : function getProperty(prop) {
-      return data[prop];
+      return _.clone(data[prop]);
     },
 
     getEvent : function getEvent() {
@@ -419,15 +572,17 @@ Event_Calendar.Model = (function(){
       var err;
       if(Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW.indexOf(prop) === -1) {
         err = new Event_Calendar.Errors.UnknownPropertyError("Unknown property", prop);
-        return publish("error", err);
+        return controller.modelError(err);
       }
       // If setting to "", null etc. remove instead
-      if(!prop) {
+      if(!val) {
         return this.removeProperty(prop);
       }
+      // Format/Validate individual property
+      val = formatTransition(prop, val);
       if(!v.validateProperty(prop, val)) {
         err = new Event_Calendar.Errors.InvalidError("Invalid " + prop, prop);
-        return publish("error", err);
+        return controller.modelError(err);
       }
       // Validate event as a whole so errors involving multiple properties are caught.
       var e = this.getEvent();
@@ -435,8 +590,9 @@ Event_Calendar.Model = (function(){
       var validationErrors = v.validateEvent(e);
       if(validationErrors.length > 0) {
         err = new Event_Calendar.Errors.ErrorGroup("", validationErrors);
-        return publish("error", err);
+        return controller.modelError(err);
       }
+      // Success!
       data[prop] = val;
       return publish("updated", e);
     },
@@ -447,30 +603,31 @@ Event_Calendar.Model = (function(){
       evt = _.pick(evt, _.identity); // Only allow properties that have a truthy value
       var temp = _.extend({}, data, evt);
       if(!temp.freq) temp = _.omit(temp, Event_Calendar.Cfg.REPEAT_PROPERTIES);
+      Object.keys(temp).forEach(function(key){temp[key] = formatTransition(key, temp[key]);});
       var validationErrors = v.validateEvent(temp);
       if(validationErrors.length === 0) {
         data = temp;
-        if(!savedState) savedState = _.extend({}, temp);
         return publish("updated", this.getEvent());
       } 
       else {
         var err = new Event_Calendar.Errors.ErrorGroup(null, validationErrors);
-        return publish("error", err);
+        return controller.modelError(err);
       }
     },
 
     setRepeatProperties : function setRepeatProperties(props) {
-      var temp = _.extend({}, data, props);
+      var temp = _.extend({}, _.omit(data, Event_Calendar.Cfg.REPEAT_PROPERTIES), props);
+      Object.keys(temp).forEach(function(key){temp[key] = formatTransition(key, temp[key]);});
       var validationErrors = v.validateEvent(temp);
       if(validationErrors.length === 0) {
         data = temp;
-        if(!savedState) savedState = _.extend({}, temp);
+        if(!savedState) savedState = _.extend({}, data);
         return this.getEvent();
       } 
       else {
-        return new Event_Calendar.Errors.ErrorGroup(null, validationErrors);
+        var err = new Event_Calendar.Errors.ErrorGroup(null, validationErrors);
+        return controller.modelError(err);
       }
-
     },
 
     /**
@@ -491,9 +648,16 @@ Event_Calendar.Model = (function(){
     },
 
     removeRepeatProperties : function removeRepeatProperties() {
-      removeProperty("freq"); // This will remove all repeat properties
-    }
+      this.removeProperty("freq"); // This will remove all repeat properties
+    },
 
+    /**
+     * Save
+     */
+    save : function save() {
+      // Insert save to server code here.
+      // if(!savedState) savedState = _.extend({}, temp);
+    }
   };
 
   return Model;
@@ -508,8 +672,8 @@ Event_Calendar.Entry = (function(){
 
   var model,
       container,
-      bi,
-      rs;
+      bi,         // basic inputs
+      rs;         // repeat setting inputs
 
   /**
    * Event Entry Constructor
@@ -520,7 +684,7 @@ Event_Calendar.Entry = (function(){
     if(container.length === 0) {
       throw new Error("Entry(): Unable to locate container");
     }
-    model = new Event_Calendar.Model(values);
+    model = new Event_Calendar.Model(values, this);
     container.html(Event_Calendar.Templates.entry_container);
     bi = new Event_Calendar.Basic_Inputs(".basic-inputs-container", this, model);
     bi.render(values);
@@ -535,8 +699,6 @@ Event_Calendar.Entry = (function(){
   function initEvents() {
     // Set up the events we are going to listen to
     container.off();
-    container.on("pushButtonSelected", function(){console.log("pushButtonSelected");});
-    container.on("pushButtonDeselected", function(){console.log("pushButtonDeselected");});
   }
   
 
@@ -560,8 +722,16 @@ Event_Calendar.Entry = (function(){
 
     toggleRepeatSettings : function toggleRepeatSettings(evt){
       rs.toggleRepeatSettings(evt);
+    },
+
+    modelError : function modelError(err) {
+      // Check existence first in case model generates error on initial load
+      if(rs) rs.renderError(err);
+      if(bi) bi.renderError(err);
+      // Double console errors should disappear...UI wont' output to it when done
+      console.error(err);
+      return err;
     }
-    
     
   };
 
@@ -579,6 +749,7 @@ Event_Calendar.Basic_Inputs = (function(){
   var controller,
       container,
       model,
+      errorHandler,
       summaryInput,
       dtstartDateInput,
       dtstartTimeInput,
@@ -600,6 +771,7 @@ Event_Calendar.Basic_Inputs = (function(){
     }
     controller = contr;
     model = md;
+    errorHandler = new Event_Calendar.ErrorHandler(container);
   }
 
   /**
@@ -622,7 +794,7 @@ Event_Calendar.Basic_Inputs = (function(){
     [dtstartDateInput, dtendDateInput].forEach(function(input){
       if(!Modernizr.touch || !Modernizr.inputtypes.date) {
         $(input).attr("type", "text").kendoDatePicker({
-          parseFormats: ["yyyy-MM-dd"],
+          parseFormats: Event_Calendar.Cfg.KENDO_DATE_PARSE_FORMATS,
           format: "MM/dd/yyyy",
           min: new Date("01/01/1970")
         });
@@ -636,6 +808,22 @@ Event_Calendar.Basic_Inputs = (function(){
     });
   }
 
+  function renderError(err) {
+    errorHandler.render(err);
+  }
+
+  function testErrorHandling() {
+    errorHandler.removeAll();
+    var arr = _.difference(Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW, Event_Calendar.Cfg.REPEAT_PROPERTIES);
+    arr.forEach(function(prop){
+      renderError(new Event_Calendar.Errors.InvalidError(prop + " error", prop));
+    });
+  }
+
+  function initEvents() {
+    repeatInput.off().on("click", function(evt){controller.toggleRepeatSettings(evt);});
+  }
+
   function setSummary(summary) {
     summaryInput.val(summary);
   }
@@ -646,7 +834,11 @@ Event_Calendar.Basic_Inputs = (function(){
       kendoDatePicker.value(value);
     }
     else {
-      input[0].valueAsDate = value;
+      if(value instanceof Date) {
+        input[0].valueAsDate = value;
+      } else {
+        input[0].value = value ? moment(value).format(Event_Calendar.Cfg.MOMENT_DATE_FORMAT) : "";
+      }
     }
   }
 
@@ -697,8 +889,17 @@ Event_Calendar.Basic_Inputs = (function(){
     setDescription(values.description || "");
   }
 
-  function initEvents() {
-    repeatInput.off().on("click", function(evt){controller.toggleRepeatSettings(evt);});
+  /**
+   * Render inputs
+   */
+
+  function render() {
+    container.html(Event_Calendar.Templates.basic_inputs);
+    initInputReferences();
+    initInputs();
+    setValues(model.getEvent());
+    initEvents();
+    // testErrorHandling();
   }
 
   /**
@@ -706,17 +907,9 @@ Event_Calendar.Basic_Inputs = (function(){
    */
   Basic_Inputs.prototype = {
 
-    /**
-     * Render inputs
-     */
-    render : function render() {
-      container.html(Event_Calendar.Templates.basic_inputs);
-      initInputReferences();
-      initInputs();
-      setValues(model.getEvent());
-      initEvents();
-    }
-    
+    render : render,
+
+    renderError : renderError
     
   };
 
@@ -734,11 +927,13 @@ Event_Calendar.Repeat_Settings = (function(){
   var container,
       controller,
       model,
+      errorHandler,
+      debouncedResize,
       rsChoice,
       rsContainer,
       variableContentContainer,
       pb,
-      smScreenBreakPoint = 550,
+      smScreenBreakPoint = Event_Calendar.Cfg.SM_SCREEN_BREAKPOINT,
       closeBtn,
       cancelBtn,
       okBtn,
@@ -746,20 +941,27 @@ Event_Calendar.Repeat_Settings = (function(){
       intervalInput,
       intervalTimeUnit,
       dtstartInput,
-      monthDayDropDown,
+      activeMonthdayTypeGroup,
+      monthdayNumericActiveRb,
+      monthdayOccurrenceActiveRb,
+      monthdayWeekdayDropdown,
       monthDayOccurrenceNumberDropDown,
+      yearWeekdayOccurrenceActiveRb,
       yearDayDropDown,
       yearDayOccurrenceNumberDropDown,
+      endTypeGroup,
       endNeverRadio,
       endAfterRadio,
       endUntilRadio,
       countInput,
       untilInput;
 
-  /**
-   * Constructor
-   * @param {Object} evt An object containing event properties
-   */
+  // -----------------------------------------------
+  // 
+  //  Constructor
+  //  
+  // -----------------------------------------------
+  // 
   function Repeat_Settings(containerSelector, cont, md) {
     container = $(containerSelector);
     if(container.length === 0) {
@@ -767,47 +969,71 @@ Event_Calendar.Repeat_Settings = (function(){
     }
     controller = cont;
     model = md;
+    errorHandler = new Event_Calendar.ErrorHandler(container);
   }
 
-  /**
-   * Utilities
-   */
+  // -----------------------------------------------
+  // 
+  //  Utilities
+  //  
+  // -----------------------------------------------
   
   function supportsTransitions() {
     return Modernizr.csstransitions;
   }
 
+  // -----------------------------------------------
+  // 
+  //  Error Handling
+  //  
+  // -----------------------------------------------
 
-  /**
-   *  Modal stuff
-   */
-   function addAppropriateModalClass() {
-     var modal = container,
-         windowClass = "modal-window",
-         slidedownClass = "modal-slidedown",
-         viewportWidth = document.documentElement.clientWidth;
-     if( viewportWidth > smScreenBreakPoint ) {
-       modal.removeClass(slidedownClass).addClass(windowClass);
-     } else {
-       modal.removeClass(windowClass).addClass(slidedownClass);
-     }
-   }
+  function renderError(err) {
+    errorHandler.render(err);
+  }
 
-   function toggleModal(evt) {
-     var modal = container,
-         showClass = "show";
+  function testErrorHandling() {
+    errorHandler.removeAll();
+    Event_Calendar.Cfg.REPEAT_PROPERTIES.forEach(function(prop){
+      renderError(new Event_Calendar.Errors.InvalidError(prop + " error", prop));
+    });
+  }
 
-     if(modal.hasClass( showClass ) ) {
-       modal.removeClass( showClass );
-     }
-     else {
-       modal.addClass( showClass );
-     }
-   }
 
-  /**
-   * Initialization
-   */
+  // -----------------------------------------------
+  // 
+  //  Modal stuff
+  //  
+  // -----------------------------------------------
+  function addAppropriateModalClass() {
+    var modal = container,
+      windowClass = Event_Calendar.Cfg.MODAL_WINDOW_CLASS,
+      slidedownClass = Event_Calendar.Cfg.MODAL_SLIDEDOWN_CLASS,
+      viewportWidth = document.documentElement.clientWidth;
+    if( viewportWidth > smScreenBreakPoint ) {
+      modal.removeClass(slidedownClass).addClass(windowClass);
+    } else {
+      modal.removeClass(windowClass).addClass(slidedownClass);
+    }
+  }
+
+  function toggleModal(evt) {
+    var modal = container,
+    showClass = "show";
+
+    if(modal.hasClass( showClass ) ) {
+      modal.removeClass( showClass );
+    }
+    else {
+      modal.addClass( showClass );
+    }
+  }
+
+  // -----------------------------------------------
+  // 
+  //  Initialization
+  //  
+  // -----------------------------------------------
 
   function initInputRefs() {
     closeBtn = $( ".close", container);
@@ -817,6 +1043,7 @@ Event_Calendar.Repeat_Settings = (function(){
     intervalInput = $(".interval", container);
     intervalTimeUnit = $(".intervalTimeUnit", container);
     dtstartInput = $(".dtstart", container);
+    endTypeGroup = $("input[name=end-type]");
     endNeverRadio = $(".never-rb", container);
     endAfterRadio = $(".count-rb", container);
     endUntilRadio = $(".until-rb", container);
@@ -827,9 +1054,10 @@ Event_Calendar.Repeat_Settings = (function(){
   function initUntil() {
     if(!Modernizr.touch || !Modernizr.inputtypes.date) {
       untilInput.attr("type", "text").kendoDatePicker({
-        parseFormats: ["yyyy-MM-dd"],
+        parseFormats: Event_Calendar.Cfg.KENDO_DATE_PARSE_FORMATS,
         format: "MM/dd/yyyy",
-        min: new Date("01/01/1970")
+        min: new Date("01/01/1970"), 
+        enabled: false
       });
     }
   }
@@ -840,138 +1068,247 @@ Event_Calendar.Repeat_Settings = (function(){
   }
 
   function initEvents() {
-    // Add appropriate modal class when resize ends
-    $(window).off("resize").on("resize", _.debounce(function(){
-      addAppropriateModalClass();
-    }, 500));
+    if(debouncedResize) { $(window).off("resize", debouncedResize); }
+    debouncedResize = _.debounce(addAppropriateModalClass, 500);
+    $(window).on("resize", debouncedResize);
     closeBtn.off().on("click", toggleModal);
     cancelBtn.off().on("click", toggleModal);
     okBtn.off().on("click", save);
+    endTypeGroup.off().on("change", endTypeChange);
     freqInput.off().on("change", freqChange);
+    intervalInput.off().on("change", intervalChange);
+    countInput.off("click", countClick).on("click", countClick);
+    untilInput.off("click", untilClick).on("click", untilClick);
   }
 
 
-  /**
-   * Events
-   */
+  // -----------------------------------------------
+  // 
+  //  Events
+  //  
+  // -----------------------------------------------
   
+  function toggleRepeatSettings(evt) {
+    toggleModal(evt);
+  }
+
   function freqChange(evt) {
-    var freq = freqInput.val();
+    var freq = getFreq();
     var ret = model.setProperty("freq", freq);
-    if(ret instanceof Error) {
-      // weird edge case error handling?
+    if( !(ret instanceof Error) ) {
+      model.setProperty("interval", 1);
+      var removeProps = _.without(Event_Calendar.Cfg.REPEAT_PROPERTIES, "freq", "interval", "count", "until");
+      model.removeProperty(removeProps);
+      setValues(model.getEvent());
+      //testErrorHandling();  // Comment out when not testing
+    }
+  }
+
+  function intervalChange(evt) {
+    model.setProperty("interval", getInterval());
+  }
+
+  function endTypeChange(evt) {
+    var freq = freqInput.val(), numOcc, unitOfTime, until, ret;
+    if ( freq == "daily" ) {
+      numOcc = 5;           // 5 days
+      unitOfTime = "days";
+    } else if ( freq == "weekly") {
+      numOcc = 24;          // 24 weeks aka 6 months
+      unitOfTime = "weeks";
+    } else if (freq == "monthly") {
+      numOcc = 12;          // 12 months
+      unitOfTime = "months";
+    } else if (freq == "yearly") {
+      numOcc = 5;           // 5 years
+      unitOfTime = "years";
+    }
+    model.removeProperty("count");
+    model.removeProperty("until");
+    setCount("");
+    setUntil("");
+    if(endAfterRadio.is(":checked")) {
+      disableUntil();
+      countInput.prop("disabled", false);
+      setCount(numOcc);
+      model.setProperty("count", numOcc);
+    }
+    else if(endUntilRadio.is(":checked")) {
+      countInput.prop("disabled", true);
+      enableUntil();
+      var dtstart = moment(model.getProperty("dtstart"));
+      until = dtstart.add(numOcc, unitOfTime).format(Event_Calendar.Cfg.MOMENT_DATE_FORMAT);
+      setUntil(until);
+      model.setProperty("until", until);     
     }
     else {
-      model.setProperty("interval", 1);
-      model.removeProperty(_.without(Event_Calendar.Cfg.REPEAT_PROPERTIES, "freq", "interval"));
-      setValues(model.getEvent());
+      countInput.prop("disabled", true);
+      disableUntil();
     }
+  }
+
+  function countChange(evt) {
+    model.removeProperty("until");
+    model.setProperty("count", getCount());
+  }
+
+  function countClick (evt) {
+    endAfterRadio.prop("checked", true);
+  }
+
+  function untilClick (evt) {
+    endUntilRadio.prop("checked", true);
+  }
+
+  function untilChange(evt) {
+    model.removeProps("count");
+    model.setProperty("until", getUntil());
   }
 
   function save(evt) {
-    model.setRepeatProperties(getValues());
-    console.log("AFTER SET: model.getEvent(): ", model.getEvent());
+    var ret = model.setRepeatProperties(getValues());
+    console.log("model.getEvent(): ", model.getEvent());
   }
 
-  /**
-   *  Get Values
-   */
+
+  // -----------------------------------------------
+  // 
+  //  Get Values
+  //  
+  // -----------------------------------------------
   
-  function getEndTypeValue(values) {
+  function getFreq() {
+    return freqInput.val();
+  }
+  
+  function getInterval() {
+    return intervalInput.val();
+  }
+  
+  function getEndTypeValue() {
     if(endAfterRadio.prop("checked")) {
-      var cnt = countInput.val();
-      if(cnt) {
-        values.count = cnt;
-      }
+      return {count: getCount()};
     }
-    else if(endUntilRadio.prop("checked")) {
-      var until,
-          kendo = untilInput.data("kendoDatePicker");
-      until = kendo ? kendo.value() : untilInput[0].value;
-      if( until ) {
-        values.until = until;
-      }
+    if(endUntilRadio.prop("checked")) {
+      return {until: getUntil()};
     }
+    return {};
   }
 
-  function getWeeklyValues(values) {
+  function getCount() {
+    return countInput.val();
+  }
+
+  function getUntil() {
+    var val,
+        kendo = untilInput.data("kendoDatePicker"),
+        dtstart = moment(model.getProperty("dtstart"));
+    val = kendo ? kendo.value() : untilInput[0].value;
+    return val ? moment(val).hours(dtstart.hours()).minutes(dtstart.minutes()).format(Event_Calendar.Cfg.MOMENT_DATE_TIME_FORMAT) : "";
+  }
+
+  function getWeeklyValues() {
+    // Only need byday if the user selected multiple days or they
+    // selected a single day that is not equal to the dtstart day.
+    // Otherwise we can rely on the rrule generating occurrences on the dtstart day
     var byday = pb.getSelectedData();
     if(byday.length > 0) {
-      values.byday = byday;
+      var dtstartDay = moment(model.getProperty("dtstart")).format("dd").toLowerCase();
+      if(byday.length > 1 || byday.indexOf(dtstartDay) == -1) {
+        return byday;
+      }
     }
+    return null;
   }
 
   function getMonthlyValues(values) {
-    var type = monthDayOccurrenceNumberDropDown.val();
-    if(type == "day") {
+    var ret = {};
+    if(monthdayNumericActiveRb.is(":checked")) {
       var bymonthday = pb.getSelectedData();
-      if(bymonthday.length > 0) {
-        values.bymonthday = bymonthday;
+      var dtstartday = parseInt(moment(model.getProperty("dtstart")).format("D"));
+      if(bymonthday.length > 1 || bymonthday[0] != dtstartday) {
+        ret.bymonthday = bymonthday;
       }
+      return ret;
     }
-    else {
-      getDayOccurrenceValue(values);
+    else if(monthdayOccurrenceActiveRb.is(":checked")) {
+      return getDayOccurrenceValue(values);
     }
   }
 
-  function getYearlyValues(values) {
-    getDayOccurrenceValue(values);
+  function getYearlyValues() {
+    var ret = {};
     var bymonth = pb.getSelectedData().map(function(n){ return parseInt(n, 10); });
-    if(bymonth.length > 0) {
-      values.bymonth = bymonth;
+    var dtstartmon = moment(model.getProperty("dtstart")).format("M");
+    if(bymonth.length > 1 || bymonth[0] != dtstartmon) {
+      ret.bymonth = bymonth;
     }
+    if(yearWeekdayOccurrenceActiveRb.is(":checked")) {
+      ret = _.extend(ret, getDayOccurrenceValue());
+    }
+    return ret;
   }
 
-  function getDayOccurrenceValue(values) {
-    var num = values.freq == "monthly" ? monthDayOccurrenceNumberDropDown.val()
-                                       : yearDayOccurrenceNumberDropDown.val();
-    if(!num) { return; }
+  function getDayOccurrenceValue() {
+    var freq = model.getProperty("freq");
+    var num = freq == "monthly" ? monthDayOccurrenceNumberDropDown.val()
+                                : yearDayOccurrenceNumberDropDown.val();
+    var byday = null, bysetpos = null, ret = {};
+    
+    if(!num) { return ret; }
     num = parseInt(num, 10);
-    var byday = freq == "monthly" ? monthDayDropDown.val()
-                                  : yearDayDropDown.val();
-    values.byday = byday;
-    if (values.byday == "weekday") {
-      values.bysetpos = num;
-      values.byday = ["mo", "tu", "we", "th", "fr"];
+    byday = freq == "monthly" ? monthdayWeekdayDropdown.val()
+                              : yearDayDropDown.val();
+    if (byday == "weekday") {
+      bysetpos = num;
+      byday = Event_Calendar.Cfg.WEEKDAYS;
     }
-    else if (values.byday == "weekendday") {
-      values.bysetpos = num;
-      values.byday = ["sa", "su"];
+    else if (byday == "weekendday") {
+      bysetpos = num;
+      byday = Event_Calendar.Cfg.WEEKEND_DAYS;
     }
-    else if(values.byday == "day") {
-      values.bysetpos = num;
-      values.byday = ["su", "mo", "tu", "we", "th", "fr", "sa"];
+    else if(byday == "day") {
+      bysetpos = num;
+      byday = Event_Calendar.Cfg.DAYS_OF_THE_WEEK;
     }
-    else if(["su", "mo", "tu", "we", "th", "fr", "sa"].indexOf(values.byday) > -1) {
-      values.byday = num + values.byday; // converts to string
+    else if(Event_Calendar.Cfg.DAYS_OF_THE_WEEK.indexOf(byday) > -1) {
+      byday = num + byday; // converts to string
     }
+    if(bysetpos) ret.bysetpos = bysetpos;
+    if(byday) ret.byday = byday;
+    return ret;
   }
 
   function getValues() {
     var values = {
-      freq : freqInput.val(),
-      interval : intervalInput.val() || 1,
+      freq : getFreq(),
+      interval : getInterval()
     };
     switch(values.freq) {
       case "weekly" :
-        getWeeklyValues(values);
+        var byday = getWeeklyValues();
+        if ( byday ) values.byday = byday;
         break;
       case "monthly" :
-        getMonthlyValues(values);
+        values = _.extend(values, getMonthlyValues());
         break;
       case "yearly" :
-        getYearlyValues(values);
+        values = _.extend(values, getYearlyValues());
         break;
       default :
     }
-    getEndTypeValue(values);
-
+    var end = getEndTypeValue();
+    Object.keys(end).forEach(function(key){
+      values[key] = end[key];
+    });
     return values;
   }
 
-  /**
-   * Set Values
-   */
+  // -----------------------------------------------
+  // 
+  //  Set Values
+  //  
+  // -----------------------------------------------
   
   function setValues(values) {
     console.log("values: ", values);
@@ -986,7 +1323,7 @@ Event_Calendar.Repeat_Settings = (function(){
     if(values.count) {
       setEndType("count", values.count);
     } else if("until", values.until) {
-      setEndType(until);
+      setEndType("until");
     } else {
       setEndType("never");
     }
@@ -1015,18 +1352,31 @@ Event_Calendar.Repeat_Settings = (function(){
     freqInput.val(freq);
   }
 
+  function setInterval(freq, interval) {
+    intervalInput.val(interval);
+    var timeUnit = "";
+    if(freq == "daily") {
+      timeUnit = " day(s)";
+    } else if(freq == "weekly") {
+      timeUnit = " week(s)";
+    } else if (freq == "monthly") {
+      timeUnit = " month(s)";
+    } else if (freq == "yearly") {
+      timeUnit = " year(s)";
+    }
+    intervalTimeUnit.text(timeUnit);
+  }
+
   function setDtstart(dtstart) {
     var val = moment(dtstart).format(Event_Calendar.Cfg.MOMENT_DATE_DISPLAY_FORMAT);
     dtstartInput.val(val);
   }
 
   function setMonthly(values) {
-    monthDayDropDown = $(".monthDayDropDown", container);
-    monthDayOccurrenceNumberDropDown = $("monthDayOccurrenceNumber", container);
-
     // Numeric month day
     if(!values.bysetpos && !values.byday) {
-      pb.set(values.bymonthday || [new Date(values.dtstart).getDate()]);
+      // use moment instead of date to avoid conversion to local time zone
+      pb.set(values.bymonthday || [parseInt(moment(values.dtstart).format("D"))]);
     }
     if(values.bymonthday) {
       pb.set(values.bymonthday);
@@ -1034,9 +1384,9 @@ Event_Calendar.Repeat_Settings = (function(){
     // special case of a day occurrence e.g first weekendday
     else if(values.bysetpos && values.byday) {
       if(values.byday.length == 2) {
-        monthDayDropDown.val("weekendday");
+        monthdayWeekdayDropdown.val("weekendday");
       } else if (values.byday.length == 5) {
-        monthDayDropDown.val("weekday");
+        monthdayWeekdayDropdown.val("weekday");
       } else {
         monthDayDropDown.val("day");
       }
@@ -1044,7 +1394,7 @@ Event_Calendar.Repeat_Settings = (function(){
     }
     // month day occurrence e.g. first sunday
     else if(values.byday) {
-      var match, regex = /^(-?[1-4]?)([a-z]+)/;
+      var match, regex = Event_Calendar.Cfg.DAY_OCCURRENCE_REGEX;
       match = values.byday.match(regex); // "1su" means month day occurrence
       var num = match[1];
       if(num >= -1 && num <= 4) {
@@ -1055,10 +1405,7 @@ Event_Calendar.Repeat_Settings = (function(){
   }
 
   function setYearly(values) {
-    var match, regex = /^(-?[1-4]?)([a-z]+)/;
-    yearDayDropDown = $(".yearDayDropDown", container);
-    yearDayOccurrenceNumberDropDown = $(".yearDayOccurrenceNumber", container);
-    
+    var match, regex = Event_Calendar.Cfg.DAY_OCCURRENCE_REGEX;
     pb.set(values.bymonth || [new Date(values.dtstart).getMonth() + 1]);
     if(values.bysetpos && values.byday) {
       if(values.byday.length === 2) {
@@ -1081,8 +1428,8 @@ Event_Calendar.Repeat_Settings = (function(){
       yearDayDropDown.val(match[2]);
     }
     else {
-      yearDayOccurrenceNumberDropDown.val("");
-      yearDayDropDown.val("su");
+      yearDayOccurrenceNumberDropDown.prop("defaultSelected");
+      yearDayDropDown.prop("defaultSelected");
     }
   }
 
@@ -1091,31 +1438,50 @@ Event_Calendar.Repeat_Settings = (function(){
       endNeverRadio.prop("checked", true);
     } else if(endType == "count") {
       endAfterRadio.prop("checked", true);
+      countInput.val(value);
     } else if(endType == "until") {
       endUntilRadio.prop("checked");
+      setUntil(value);
     }
   }
 
-  function setInterval(freq, interval) {
-    intervalInput.val(interval);
-    var timeUnit = "";
-    if(freq == "daily") {
-      timeUnit = " day(s)";
-    } else if(freq == "weekly") {
-      timeUnit = " week(s)";
-    } else if (freq == "monthly") {
-      timeUnit = " month(s)";
-    } else if (freq == "yearly") {
-      timeUnit = " year(s)";
+  function disableUntil() {
+    var kendo = untilInput.data("kendoDatePicker");
+    if(kendo) {
+      kendo.enable(false);
+    } else {
+      untilInput.prop("disabled", true);
     }
-    intervalTimeUnit.text(timeUnit);
   }
 
+  function enableUntil() {
+    var kendo = untilInput.data("kendoDatePicker");
+    if(kendo) {
+      kendo.enable(true);
+    } else {
+      untilInput.prop("disabled", false);
+    }
+  }
 
+  function setUntil(val) {
+    var kendo = untilInput.data("kendoDatePicker");
+    val = val ? moment(val).format(Event_Calendar.Cfg.MOMENT_DATE_FORMAT) : "";
+    if(kendo) {
+      kendo.value(val);
+    } else {
+      untilInput[0].value = val;
+    }
+  }
 
-  /**
-   *  Render
-   */
+  function setCount(val) {
+    countInput.val(val);
+  }
+
+  // -----------------------------------------------
+  // 
+  //  Render
+  //  
+  // -----------------------------------------------
   
   function renderVariableContent (freq, monthlyDayOfWeek) {
     freq = freq || "";
@@ -1123,7 +1489,7 @@ Event_Calendar.Repeat_Settings = (function(){
       variableContentContainer.html("");
     }
     else if(freq == "weekly") {
-      variableContentContainer.html(Event_Calendar.Templates.weekly_freq_day_of_week);
+      variableContentContainer.html(Event_Calendar.Templates.weekly_inputs);
       pb = new Event_Calendar.PushButtons(".pushbutton-container", controller);
       pb.render({
         numCols: 7,
@@ -1133,34 +1499,51 @@ Event_Calendar.Repeat_Settings = (function(){
       });
     }
     else if(freq == "monthly") {
-      if(monthlyDayOfWeek) {
-        variableContentContainer.html(Event_Calendar.Templates.monthly_freq_day_of_week);
-      }
-      else {
-        variableContentContainer.html(Event_Calendar.Templates.monthly_freq_numeric_day);
-        pb = new Event_Calendar.PushButtons(".pushbutton-container", controller);
-        pb.render({
-          numCols: 7,
-          buttonWidth: 25,
-          buttonHeight: 25,
-          data: [
-            {text: 1, value: 1},{text: 2, value: 2},{text: 3, value: 3},
-            {text: 4, value: 4},{text: 5, value: 5},{text: 6, value: 6},
-            {text: 7, value: 7},{text: 8, value: 8},{text: 9, value: 9},
-            {text: 10, value: 10},{text: 11, value: 11},{text: 12, value: 12},
-            {text: 13, value: 13},{text: 14, value: 14},{text: 15, value: 15},
-            {text: 16, value: 16},{text: 17, value: 17},{text: 18, value: 18},
-            {text: 19, value: 19},{text: 20, value: 20},{text: 21, value: 21},
-            {text: 22, value: 22},{text: 23, value: 23},{text: 24, value: 24},
-            {text: 25, value: 25},{text: 26, value: 26},{text: 27, value: 27},
-            {text: 28, value: 28},{text: 29, value: 29},{text: 30, value: 30},
-            {text: 31, value: 31}
-          ]
-        });
-      }
+      variableContentContainer.html(Event_Calendar.Templates.monthly_inputs);
+      activeMonthdayTypeGroup = $("input[name=active-monthday-type]");
+      activeMonthdayTypeGroup.on("change", function(){
+        if(monthdayOccurrenceActiveRb.is(":checked")) {
+          $(".monthday-occurrence-number, .monthday-weekday-dropdown").prop("disabled", false);
+        } else {
+          $(".monthday-occurrence-number, .monthday-weekday-dropdown").prop("disabled", true);
+        }
+      });
+      monthdayNumericActiveRb = $(".monthday-numeric-active", container);
+      monthdayOccurrenceActiveRb = $(".monthday-occurrence-active", container);
+      monthDayOccurrenceNumberDropDown = $(".monthday-occurrence-number", container);
+      monthdayWeekdayDropdown = $(".monthday-weekday-dropdown", container);
+      pb = new Event_Calendar.PushButtons(".pushbutton-container", controller);
+      pb.render({
+        numCols: 7,
+        buttonWidth: 25,
+        buttonHeight: 25,
+        data: [
+          {text: 1, value: 1},{text: 2, value: 2},{text: 3, value: 3},
+          {text: 4, value: 4},{text: 5, value: 5},{text: 6, value: 6},
+          {text: 7, value: 7},{text: 8, value: 8},{text: 9, value: 9},
+          {text: 10, value: 10},{text: 11, value: 11},{text: 12, value: 12},
+          {text: 13, value: 13},{text: 14, value: 14},{text: 15, value: 15},
+          {text: 16, value: 16},{text: 17, value: 17},{text: 18, value: 18},
+          {text: 19, value: 19},{text: 20, value: 20},{text: 21, value: 21},
+          {text: 22, value: 22},{text: 23, value: 23},{text: 24, value: 24},
+          {text: 25, value: 25},{text: 26, value: 26},{text: 27, value: 27},
+          {text: 28, value: 28},{text: 29, value: 29},{text: 30, value: 30},
+          {text: 31, value: 31}
+        ]
+      });
     }
     else if(freq == "yearly") {
-      variableContentContainer.html(Event_Calendar.Templates.yearly_freq_month_selection);
+      variableContentContainer.html(Event_Calendar.Templates.yearly_inputs);
+      yearDayDropDown = $(".yearday-drop-down", container);
+      yearDayOccurrenceNumberDropDown = $(".yearday-occurrence-number", container);
+      yearWeekdayOccurrenceActiveRb = $(".year-day-occurrence-active", container);
+      yearWeekdayOccurrenceActiveRb.on("change", function(){
+        if(yearWeekdayOccurrenceActiveRb.is(":checked")) {
+          $(".yearday-occurrence-number, .yearday-drop-down").prop("disabled", false);
+        } else {
+          $(".yearday-occurrence-number, .yearday-drop-down").prop("disabled", true);
+        }
+      });
       pb = new Event_Calendar.PushButtons(".pushbutton-container", controller);
       pb.render({
         numCols: 6,
@@ -1179,24 +1562,30 @@ Event_Calendar.Repeat_Settings = (function(){
     }
   }
 
-  /**
-   * API 
-   */
+  function render() {
+    container.html(Event_Calendar.Templates.persistent_repeat_inputs);
+    variableContentContainer = $(".variable-content-row", container);
+    addAppropriateModalClass();
+    initInputRefs();
+    initInputs();
+    setValues(model.getEvent());
+    initEvents();
+  }
+
+  
+  // -----------------------------------------------
+  // 
+  //  API
+  //  
+  // -----------------------------------------------
   Repeat_Settings.prototype = {
 
-    render : function render() {
-      container.html(Event_Calendar.Templates.persistent_repeat_inputs);
-      variableContentContainer = $(".variable-content-row", container);
-      addAppropriateModalClass();
-      initInputRefs();
-      initInputs();
-      setValues(model.getEvent());
-      initEvents();
-    },
+    render : render,
 
-    toggleRepeatSettings : function toggleRepeatSettings(evt) {
-      toggleModal(evt);
-    }
+    toggleRepeatSettings : toggleRepeatSettings,
+
+    renderError : renderError
+  
   };
 
   return Repeat_Settings;

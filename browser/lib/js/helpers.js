@@ -10,6 +10,20 @@ Event_Calendar.Helpers = {
    */
   isInteger : function isInteger(i) {
     return typeof i !== "undefined" && !isNaN(parseInt(i, 10)) && Math.floor(i) == i;
+  },
+
+  convertDateTimeStrToUTC : function convertDateTimeStrToUTC(dtstr) {
+    if(dtstr.slice(-1) !== "Z") {
+      dtstr = moment(dtstr).utc().format("YYYY-MM-DDTHH:mm") + "Z";
+    }
+    return dtstr;
+  },
+
+  convertDateTimeStrToLocal: function convertDateTimeStrToLocal(dtstr) {
+    if(dtstr.slice(-1) == "Z") {
+      dtstr = moment(dtstr).local().format("YYYY-MM-DDTHH:mm");
+    }
+    return dtstr;
   }
 
 };

@@ -6,8 +6,8 @@ Event_Calendar.Entry = (function(){
 
   var model,
       container,
-      bi,
-      rs;
+      bi,         // basic inputs
+      rs;         // repeat setting inputs
 
   /**
    * Event Entry Constructor
@@ -18,7 +18,7 @@ Event_Calendar.Entry = (function(){
     if(container.length === 0) {
       throw new Error("Entry(): Unable to locate container");
     }
-    model = new Event_Calendar.Model(values);
+    model = new Event_Calendar.Model(values, this);
     container.html(Event_Calendar.Templates.entry_container);
     bi = new Event_Calendar.Basic_Inputs(".basic-inputs-container", this, model);
     bi.render(values);
@@ -33,8 +33,6 @@ Event_Calendar.Entry = (function(){
   function initEvents() {
     // Set up the events we are going to listen to
     container.off();
-    container.on("pushButtonSelected", function(){console.log("pushButtonSelected");});
-    container.on("pushButtonDeselected", function(){console.log("pushButtonDeselected");});
   }
   
 
@@ -58,8 +56,16 @@ Event_Calendar.Entry = (function(){
 
     toggleRepeatSettings : function toggleRepeatSettings(evt){
       rs.toggleRepeatSettings(evt);
+    },
+
+    modelError : function modelError(err) {
+      // Check existence first in case model generates error on initial load
+      if(rs) rs.renderError(err);
+      if(bi) bi.renderError(err);
+      // Double console errors should disappear...UI wont' output to it when done
+      console.error(err);
+      return err;
     }
-    
     
   };
 

@@ -8,6 +8,7 @@ Event_Calendar.Basic_Inputs = (function(){
   var controller,
       container,
       model,
+      errorHandler,
       summaryInput,
       dtstartDateInput,
       dtstartTimeInput,
@@ -29,6 +30,7 @@ Event_Calendar.Basic_Inputs = (function(){
     }
     controller = contr;
     model = md;
+    errorHandler = new Event_Calendar.ErrorHandler(container);
   }
 
   /**
@@ -51,7 +53,7 @@ Event_Calendar.Basic_Inputs = (function(){
     [dtstartDateInput, dtendDateInput].forEach(function(input){
       if(!Modernizr.touch || !Modernizr.inputtypes.date) {
         $(input).attr("type", "text").kendoDatePicker({
-          parseFormats: ["yyyy-MM-dd"],
+          parseFormats: Event_Calendar.Cfg.KENDO_DATE_PARSE_FORMATS,
           format: "MM/dd/yyyy",
           min: new Date("01/01/1970")
         });
@@ -65,6 +67,22 @@ Event_Calendar.Basic_Inputs = (function(){
     });
   }
 
+  function renderError(err) {
+    errorHandler.render(err);
+  }
+
+  function testErrorHandling() {
+    errorHandler.removeAll();
+    var arr = _.difference(Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW, Event_Calendar.Cfg.REPEAT_PROPERTIES);
+    arr.forEach(function(prop){
+      renderError(new Event_Calendar.Errors.InvalidError(prop + " error", prop));
+    });
+  }
+
+  function initEvents() {
+    repeatInput.off().on("click", function(evt){controller.toggleRepeatSettings(evt);});
+  }
+
   function setSummary(summary) {
     summaryInput.val(summary);
   }
@@ -75,7 +93,11 @@ Event_Calendar.Basic_Inputs = (function(){
       kendoDatePicker.value(value);
     }
     else {
-      input[0].valueAsDate = value;
+      if(value instanceof Date) {
+        input[0].valueAsDate = value;
+      } else {
+        input[0].value = value ? moment(value).format(Event_Calendar.Cfg.MOMENT_DATE_FORMAT) : "";
+      }
     }
   }
 
@@ -126,8 +148,17 @@ Event_Calendar.Basic_Inputs = (function(){
     setDescription(values.description || "");
   }
 
-  function initEvents() {
-    repeatInput.off().on("click", function(evt){controller.toggleRepeatSettings(evt);});
+  /**
+   * Render inputs
+   */
+
+  function render() {
+    container.html(Event_Calendar.Templates.basic_inputs);
+    initInputReferences();
+    initInputs();
+    setValues(model.getEvent());
+    initEvents();
+    // testErrorHandling();
   }
 
   /**
@@ -135,17 +166,9 @@ Event_Calendar.Basic_Inputs = (function(){
    */
   Basic_Inputs.prototype = {
 
-    /**
-     * Render inputs
-     */
-    render : function render() {
-      container.html(Event_Calendar.Templates.basic_inputs);
-      initInputReferences();
-      initInputs();
-      setValues(model.getEvent());
-      initEvents();
-    }
-    
+    render : render,
+
+    renderError : renderError
     
   };
 
