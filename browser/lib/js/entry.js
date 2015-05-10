@@ -7,7 +7,8 @@ Event_Calendar.Entry = (function(){
   var model,
       container,
       bi,         // basic inputs
-      rs;         // repeat setting inputs
+      rs,         // repeat setting inputs,
+      eh;         // error handler
 
   /**
    * Event Entry Constructor
@@ -24,6 +25,7 @@ Event_Calendar.Entry = (function(){
     bi.render(values);
     rs = new Event_Calendar.Repeat_Settings(".repeat-settings-container", this, model);
     rs.render();
+    eh = new Event_Calendar.ErrorHandler(container);
     initEvents();
   }
 
@@ -56,15 +58,6 @@ Event_Calendar.Entry = (function(){
 
     toggleRepeatSettings : function toggleRepeatSettings(evt){
       rs.toggleRepeatSettings(evt);
-    },
-
-    modelError : function modelError(err) {
-      // Check existence first in case model generates error on initial load
-      if(rs) rs.renderError(err);
-      if(bi) bi.renderError(err);
-      // Double console errors should disappear...UI wont' output to it when done
-      console.error(err);
-      return err;
     }
     
   };

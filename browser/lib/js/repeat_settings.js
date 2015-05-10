@@ -8,10 +8,9 @@ Event_Calendar.Repeat_Settings = (function(){
   var container,
       controller,
       model,
+      validator,
       errorHandler,
       debouncedResize,
-      rsChoice,
-      rsContainer,
       variableContentContainer,
       pb,
       smScreenBreakPoint = Event_Calendar.Cfg.SM_SCREEN_BREAKPOINT,
@@ -50,6 +49,7 @@ Event_Calendar.Repeat_Settings = (function(){
     }
     controller = cont;
     model = md;
+    validator = Event_Calendar.Validate;
     errorHandler = new Event_Calendar.ErrorHandler(container);
   }
 
@@ -61,23 +61,6 @@ Event_Calendar.Repeat_Settings = (function(){
   
   function supportsTransitions() {
     return Modernizr.csstransitions;
-  }
-
-  // -----------------------------------------------
-  // 
-  //  Error Handling
-  //  
-  // -----------------------------------------------
-
-  function renderError(err) {
-    errorHandler.render(err);
-  }
-
-  function testErrorHandling() {
-    errorHandler.removeAll();
-    Event_Calendar.Cfg.REPEAT_PROPERTIES.forEach(function(prop){
-      renderError(new Event_Calendar.Errors.InvalidError(prop + " error", prop));
-    });
   }
 
 
@@ -101,7 +84,6 @@ Event_Calendar.Repeat_Settings = (function(){
   function toggleModal(evt) {
     var modal = container,
     showClass = "show";
-
     if(modal.hasClass( showClass ) ) {
       modal.removeClass( showClass );
     }
@@ -138,13 +120,13 @@ Event_Calendar.Repeat_Settings = (function(){
         parseFormats: Event_Calendar.Cfg.KENDO_DATE_PARSE_FORMATS,
         format: "MM/dd/yyyy",
         min: new Date("01/01/1970"), 
-        enabled: false
+        enabled: false,
+        change: validate
       });
     }
   }
   
   function initInputs() {
-    dtstartInput.attr("disabled", true);
     initUntil();
   }
 
@@ -157,9 +139,25 @@ Event_Calendar.Repeat_Settings = (function(){
     okBtn.off().on("click", save);
     endTypeGroup.off().on("change", endTypeChange);
     freqInput.off().on("change", freqChange);
-    intervalInput.off().on("change", intervalChange);
-    countInput.off("click", countClick).on("click", countClick);
-    untilInput.off("click", untilClick).on("click", untilClick);
+    intervalInput.off().on("change", validate);
+    countInput.off().on("click", countClick);
+    countInput.on("change", validate);
+    untilInput.off().on("click", untilClick);
+  }
+
+  // -----------------------------------------------
+  // 
+  //  Validate
+  //  
+  // -----------------------------------------------
+
+  function validate() {
+    errorHandler.removeAll();
+    var validationErrors = validator.validateRRule(getValues());
+    if(validationErrors.length > 0) {
+      var err = new Event_Calendar.Errors.ErrorGroup("", validationErrors);
+      errorHandler.render(err);
+    }
   }
 
 
@@ -174,19 +172,17 @@ Event_Calendar.Repeat_Settings = (function(){
   }
 
   function freqChange(evt) {
-    var freq = getFreq();
-    var ret = model.setProperty("freq", freq);
-    if( !(ret instanceof Error) ) {
-      model.setProperty("interval", 1);
-      var removeProps = _.without(Event_Calendar.Cfg.REPEAT_PROPERTIES, "freq", "interval", "count", "until");
-      model.removeProperty(removeProps);
-      setValues(model.getEvent());
-      //testErrorHandling();  // Comment out when not testing
+    var values = {
+      freq : getFreq(),
+      interval : 1
+    };
+    var endVal = getEndTypeValue();
+    if(endVal.count) {
+      values.count = endVal.count;
+    } else if(endVal.until) {
+      values.until = endVal.until;
     }
-  }
-
-  function intervalChange(evt) {
-    model.setProperty("interval", getInterval());
+    setValues(values);
   }
 
   function endTypeChange(evt) {
@@ -204,33 +200,25 @@ Event_Calendar.Repeat_Settings = (function(){
       numOcc = 5;           // 5 years
       unitOfTime = "years";
     }
-    model.removeProperty("count");
-    model.removeProperty("until");
     setCount("");
     setUntil("");
     if(endAfterRadio.is(":checked")) {
       disableUntil();
       countInput.prop("disabled", false);
       setCount(numOcc);
-      model.setProperty("count", numOcc);
     }
     else if(endUntilRadio.is(":checked")) {
       countInput.prop("disabled", true);
       enableUntil();
       var dtstart = moment(model.getProperty("dtstart"));
       until = dtstart.add(numOcc, unitOfTime).format(Event_Calendar.Cfg.MOMENT_DATE_FORMAT);
-      setUntil(until);
-      model.setProperty("until", until);     
+      setUntil(until);     
     }
     else {
       countInput.prop("disabled", true);
       disableUntil();
     }
-  }
-
-  function countChange(evt) {
-    model.removeProperty("until");
-    model.setProperty("count", getCount());
+    validate();
   }
 
   function countClick (evt) {
@@ -241,14 +229,12 @@ Event_Calendar.Repeat_Settings = (function(){
     endUntilRadio.prop("checked", true);
   }
 
-  function untilChange(evt) {
-    model.removeProps("count");
-    model.setProperty("until", getUntil());
-  }
-
   function save(evt) {
-    var ret = model.setRepeatProperties(getValues());
-    console.log("model.getEvent(): ", model.getEvent());
+    console.log("REPEAT SETTINGS: ", getValues());
+    console.log("MODEL: ", model.getEvent());
+    if($(".error", container).length === 0) {
+      // var ret = model.setRepeatProperties(getValues());
+    }
   }
 
 
@@ -331,7 +317,7 @@ Event_Calendar.Repeat_Settings = (function(){
   }
 
   function getDayOccurrenceValue() {
-    var freq = model.getProperty("freq");
+    var freq = freqInput.val();
     var num = freq == "monthly" ? monthDayOccurrenceNumberDropDown.val()
                                 : yearDayOccurrenceNumberDropDown.val();
     var byday = null, bysetpos = null, ret = {};
@@ -392,14 +378,14 @@ Event_Calendar.Repeat_Settings = (function(){
   // -----------------------------------------------
   
   function setValues(values) {
-    console.log("values: ", values);
     setPersistentValues(values);
     setVariableValues(values);
   }
 
   function setPersistentValues(values) {
-    setFreq(values.freq);
-    setInterval(values.freq, values.interval);
+    var freq = values.freq || "daily";
+    setFreq(freq);
+    setInterval(freq , values.interval || 1);
     setDtstart(values.dtstart);
     if(values.count) {
       setEndType("count", values.count);
@@ -487,7 +473,7 @@ Event_Calendar.Repeat_Settings = (function(){
 
   function setYearly(values) {
     var match, regex = Event_Calendar.Cfg.DAY_OCCURRENCE_REGEX;
-    pb.set(values.bymonth || [new Date(values.dtstart).getMonth() + 1]);
+    pb.set(values.bymonth || [new Date(model.getProperty("dtstart")).getMonth() + 1]);
     if(values.bysetpos && values.byday) {
       if(values.byday.length === 2) {
         yearDayDropDown.val("weekendday");
@@ -578,6 +564,7 @@ Event_Calendar.Repeat_Settings = (function(){
         buttonHeight: 25,
         data: [{text: "SU", value: "su"},{text: "MO", value: "mo"},{text: "TU", value: "tu"},{text: "WE", value: "we"},{text: "TH", value: "th"},{text: "FR", value: "fr"},{text: "SA", value: "sa"}]
       });
+      variableContentContainer.off().on("pushButtonSelected pushButtonDeselected", validate);
     }
     else if(freq == "monthly") {
       variableContentContainer.html(Event_Calendar.Templates.monthly_inputs);
@@ -612,6 +599,8 @@ Event_Calendar.Repeat_Settings = (function(){
           {text: 31, value: 31}
         ]
       });
+      $(".monthday-occurrence-number, .monthday-weekday-dropdown").off().on("change", validate);
+      variableContentContainer.off().on("pushButtonSelected pushButtonDeselected", validate);
     }
     else if(freq == "yearly") {
       variableContentContainer.html(Event_Calendar.Templates.yearly_inputs);
@@ -637,6 +626,8 @@ Event_Calendar.Repeat_Settings = (function(){
           {text: "Oct", value: 10},{text: "Nov", value: 11},{text: "Dec", value: 12}
         ]
       });
+      $(".yearday-occurrence-number, .yearday-drop-down").off().on("change", validate);
+      variableContentContainer.off().on("pushButtonSelected pushButtonDeselected", validate);
     }
     else {
       variableContentContainer.html("");
@@ -663,10 +654,7 @@ Event_Calendar.Repeat_Settings = (function(){
 
     render : render,
 
-    toggleRepeatSettings : toggleRepeatSettings,
-
-    renderError : renderError
-  
+    toggleRepeatSettings : toggleRepeatSettings  
   };
 
   return Repeat_Settings;

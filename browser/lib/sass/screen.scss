@@ -165,11 +165,6 @@ $window-close-btn-color: #454545;
 
   }
 
-  .monthday-occurrence-row  label{
-    display: block;
-    float: none;
-  }
-
   // These next 2 selector groups are hacks
   // because the elements are being clipped by
   // their container 
@@ -274,6 +269,7 @@ $window-close-btn-color: #454545;
   }
 
   .monthday-numeric-row > label,
+  .monthday-occurrence-row > label,
   .year-month-row > label,
   .weekday-row > label {
     display: block;

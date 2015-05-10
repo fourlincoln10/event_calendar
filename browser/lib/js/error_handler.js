@@ -10,16 +10,48 @@ Event_Calendar.ErrorHandler = (function(){
   
   function ErrorHandler(cnt) {
     container = cnt;
+    subscribe("ecmodel.property_set_error", render);
+    subscribe("ecmodel.property_set", propertySet);
+    subscribe("ecmodel.event_set_error", modelEventSetError);
+    subscribe("ecmodel.event_set", removeAll);
+    subscribe("ecmodel.repeat_properties_set_error", repeatPropertiesError);
+    subscribe("ecmodel.repeat_properties_set", removeRepeatPropertyErrors);
+    subscribe("ecrs.invalid", repeatPropertiesError);
+    subscribe("ecrs.valid", removeRepeatPropertyErrors);
+  }
+
+  function subscribe(topic, callback) {
+    postal.subscribe({
+      topic: topic,
+      callback: callback
+    });
+  }
+
+  function propertySet(p) {
+    removePropError(p.prop);
   }
   
+  function modelEventSetError(err) {
+    removeAll();
+    render(err);
+  }
+
+  function repeatPropertiesError(err) {
+    removeRepeatPropertyErrors();
+    render(err);
+  }
+
   function errorsPresent() {
     return $(".error", container).length > 0;
   }
   function errorClass(prop) {
-    return prop ? "error " + prop + "Error" : "error";
+    return prop + "Error";
   }
   function removeAll() {
     $(".error", container).remove();
+  }
+  function removeRepeatPropertyErrors() {
+    Event_Calendar.Cfg.REPEAT_PROPERTIES.forEach(function(prop){removePropError(prop);});
   }
   function removePropError(prop) {
     var cls = errorClass(prop);
@@ -29,7 +61,7 @@ Event_Calendar.ErrorHandler = (function(){
   }
   function insertInDom(msg, prop) {
       if( !prop ) return console.error(msg);
-      var html = "<div class='" + errorClass(prop) + "'>" + msg + "</div>";
+      var html = "<div class='error " + errorClass(prop) + "'>" + msg + "</div>";
       // summary
       if( prop == "summary" ) {
         $(".title-row label:first-of-type", container).after(html);
@@ -85,6 +117,7 @@ Event_Calendar.ErrorHandler = (function(){
   function render(err) {
     err = err.errors || [err];
     err.forEach(function(e) {
+      removePropError(e.eventProperty);
       insertInDom(e.message, e.eventProperty);
     });
   }

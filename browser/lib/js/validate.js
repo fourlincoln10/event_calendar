@@ -70,7 +70,7 @@ Event_Calendar.Validate = {
   },
 
   validateInterval : function validateInterval(interval) {
-    return typeof interval !== "undefined" && Event_Calendar.Helpers.isInteger(interval) && interval >= 1;
+    return typeof interval !== "undefined" && Event_Calendar.Helpers.isInteger(interval) && interval > 0;
   },
 
   validateCount : function validateCount(count) {

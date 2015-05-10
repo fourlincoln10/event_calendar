@@ -8,7 +8,6 @@ Event_Calendar.Basic_Inputs = (function(){
   var controller,
       container,
       model,
-      errorHandler,
       summaryInput,
       dtstartDateInput,
       dtstartTimeInput,
@@ -30,7 +29,6 @@ Event_Calendar.Basic_Inputs = (function(){
     }
     controller = contr;
     model = md;
-    errorHandler = new Event_Calendar.ErrorHandler(container);
   }
 
   /**
@@ -64,18 +62,6 @@ Event_Calendar.Basic_Inputs = (function(){
       if(!Modernizr.touch || !Modernizr.inputtypes.date) {
         $(input).attr("type", "text").kendoTimePicker({});
       }
-    });
-  }
-
-  function renderError(err) {
-    errorHandler.render(err);
-  }
-
-  function testErrorHandling() {
-    errorHandler.removeAll();
-    var arr = _.difference(Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW, Event_Calendar.Cfg.REPEAT_PROPERTIES);
-    arr.forEach(function(prop){
-      renderError(new Event_Calendar.Errors.InvalidError(prop + " error", prop));
     });
   }
 
@@ -158,7 +144,6 @@ Event_Calendar.Basic_Inputs = (function(){
     initInputs();
     setValues(model.getEvent());
     initEvents();
-    // testErrorHandling();
   }
 
   /**
@@ -166,9 +151,7 @@ Event_Calendar.Basic_Inputs = (function(){
    */
   Basic_Inputs.prototype = {
 
-    render : render,
-
-    renderError : renderError
+    render : render
     
   };
 

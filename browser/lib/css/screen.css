@@ -73,9 +73,6 @@
     .repeat-settings-container .weekday-row label, .repeat-settings-container .weekday-row .pushButtonsTable, .repeat-settings-container .weekday-row select, .repeat-settings-container .monthday-numeric-row label, .repeat-settings-container .monthday-numeric-row .pushButtonsTable, .repeat-settings-container .monthday-numeric-row select, .repeat-settings-container .monthday-occurrence-row label, .repeat-settings-container .monthday-occurrence-row .pushButtonsTable, .repeat-settings-container .monthday-occurrence-row select, .repeat-settings-container .year-month-row label, .repeat-settings-container .year-month-row .pushButtonsTable, .repeat-settings-container .year-month-row select {
       display: inline-block;
       float: left; }
-  .repeat-settings-container .monthday-occurrence-row label {
-    display: block;
-    float: none; }
   .repeat-settings-container .monthday-occurrence-number {
     margin-top: 2px; }
   .repeat-settings-container .weekday-container, .repeat-settings-container .year-month-container, .repeat-settings-container .monthday-container {
@@ -137,7 +134,7 @@
       float: none; }
     .modal-slidedown .monthday-row .monthday-container {
       padding: 0 0 0 10px; }
-  .modal-slidedown .monthday-numeric-row > label, .modal-slidedown .year-month-row > label, .modal-slidedown .weekday-row > label {
+  .modal-slidedown .monthday-numeric-row > label, .modal-slidedown .monthday-occurrence-row > label, .modal-slidedown .year-month-row > label, .modal-slidedown .weekday-row > label {
     display: block;
     float: none; }
   .modal-slidedown .weekday-container, .modal-slidedown .year-month-container {

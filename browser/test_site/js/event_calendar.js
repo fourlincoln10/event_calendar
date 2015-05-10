@@ -49,13 +49,13 @@ Event_Calendar.Cfg = {
   DAY_OCCURRENCE_REGEX        : /^(-?[1-4]?)([a-z]+)/,
   FREQ_ERR_MSG                : "Invalid frequency",
   INTERVAL_ERR_MSG            : "Must be an integer >= 1",
-  DTSTART_ERR_MSG             : "Enter as mm/dd/yyyy > 01/01/1970",
+  DTSTART_ERR_MSG             : "Invalid date",
   DTSTART_REQUIRED_ERR_MSG    : "Required",
   DTEND_REQUIRED_ERR_MSG      : "Required",
   END_BEFORE_START_ERR_MSG    : "End date must be after start date",
   DTSTART_TOO_OLD_ERR_MSG     : "Start date too far in past",
   COUNT_ERR_MSG               : "Must be empty or an integer >= 1",
-  UNTIL_ERR_MSG               : "Enter as mm/dd/yyyy > 01/01/1970",
+  UNTIL_ERR_MSG               : "Invalid date",
   COUNT_AND_UNTIL_ERR_MSG     : "Can't have both count and until",
   BYDAY_ERR_MSG               : "Invalid byday",
   BYMONTHDAY_ERR_MSG          : "Integer between 1 and 31 (inclusive)",
@@ -138,16 +138,48 @@ Event_Calendar.ErrorHandler = (function(){
   
   function ErrorHandler(cnt) {
     container = cnt;
+    subscribe("ecmodel.property_set_error", render);
+    subscribe("ecmodel.property_set", propertySet);
+    subscribe("ecmodel.event_set_error", modelEventSetError);
+    subscribe("ecmodel.event_set", removeAll);
+    subscribe("ecmodel.repeat_properties_set_error", repeatPropertiesError);
+    subscribe("ecmodel.repeat_properties_set", removeRepeatPropertyErrors);
+    subscribe("ecrs.invalid", repeatPropertiesError);
+    subscribe("ecrs.valid", removeRepeatPropertyErrors);
+  }
+
+  function subscribe(topic, callback) {
+    postal.subscribe({
+      topic: topic,
+      callback: callback
+    });
+  }
+
+  function propertySet(p) {
+    removePropError(p.prop);
   }
   
+  function modelEventSetError(err) {
+    removeAll();
+    render(err);
+  }
+
+  function repeatPropertiesError(err) {
+    removeRepeatPropertyErrors();
+    render(err);
+  }
+
   function errorsPresent() {
     return $(".error", container).length > 0;
   }
   function errorClass(prop) {
-    return prop ? "error " + prop + "Error" : "error";
+    return prop + "Error";
   }
   function removeAll() {
     $(".error", container).remove();
+  }
+  function removeRepeatPropertyErrors() {
+    Event_Calendar.Cfg.REPEAT_PROPERTIES.forEach(function(prop){removePropError(prop);});
   }
   function removePropError(prop) {
     var cls = errorClass(prop);
@@ -157,7 +189,7 @@ Event_Calendar.ErrorHandler = (function(){
   }
   function insertInDom(msg, prop) {
       if( !prop ) return console.error(msg);
-      var html = "<div class='" + errorClass(prop) + "'>" + msg + "</div>";
+      var html = "<div class='error " + errorClass(prop) + "'>" + msg + "</div>";
       // summary
       if( prop == "summary" ) {
         $(".title-row label:first-of-type", container).after(html);
@@ -213,6 +245,7 @@ Event_Calendar.ErrorHandler = (function(){
   function render(err) {
     err = err.errors || [err];
     err.forEach(function(e) {
+      removePropError(e.eventProperty);
       insertInDom(e.message, e.eventProperty);
     });
   }
@@ -329,7 +362,7 @@ Event_Calendar.Validate = {
   },
 
   validateInterval : function validateInterval(interval) {
-    return typeof interval !== "undefined" && Event_Calendar.Helpers.isInteger(interval) && interval >= 1;
+    return typeof interval !== "undefined" && Event_Calendar.Helpers.isInteger(interval) && interval > 0;
   },
 
   validateCount : function validateCount(count) {
@@ -435,7 +468,7 @@ Event_Calendar.Templates = {
   "basic_inputs": "<div class=\"basic-inputs\"><div class=\"save-button-row row\"> <button class=\"save-button\" title=\"Save\">Save</button></div><div class=\"title-row row\"> <label>Title</label> <input type=\"text\" title=\"Event Title\" class=\"summary\" /></div><div class=\"date-row row\"> <label>Start/End</label> <span class=\"dtstart-group\"><span class=\"dtstart-prefix prefix\">From</span> <input type=\"date\" title=\"From Date\" class=\"dtstart-date\" /> <span class=\"dtstart-separator separator\">at</span> <input type=\"time\" title=\"From Time\" class=\"dtstart-time\" /></span> <span class=\"dtend-group\"><span class=\"dtend-prefix prefix\">To</span> <input type=\"date\" title=\"To Date\" class=\"dtend-date\" /> <span class=\"dtend-separator separator\">at</span> <input type=\"time\" title=\"To Time\" class=\"dtend-time\" /></span></div><div class=\"allday-row row\"> <label>All Day <input type=\"checkbox\" title=\"All Day\" class=\"allday\" /></label></div><div class=\"repeat-row row\"> <label>Repeat <input type=\"checkbox\" title=\"Repeat\" class=\"repeat\" /><span class=\"repeat-msg\"></span></label></div><div class=\"location-row row\"> <label>Location</label> <input type=\"text\" title=\"Event Location\" class=\"location\" /></div><div class=\"description-row row\"> <label>Description</label><textarea class=\"description\"></textarea></div></div>",
   "entry_container": "<div class=\"edit-event-container\"><div class=\"basic-inputs-container\"></div><div class=\"repeat-settings-container\"></div></div>",
   "monthly_inputs": "<div class='row monthday-numeric-row'> <label><input type=\"radio\" name=\"active-monthday-type\" class=\"monthday-numeric-active\" checked /> Each:<a class='inlineHelp' data-help='Select \"Day\" and one of the days of the month if the event needs to repeat on one or more days of the month e.g. the 1st and the 15th. Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third, fourth or last day of the week. A drop down menu will appear to the right so you can choose the day of the week.'><i class='icon-question-sign'></i></a></label><div class='monthday-container'><div class='pushbutton-container'></div></div></div><div class='row monthday-occurrence-row'> <label><input type=\"radio\" name=\"active-monthday-type\" class=\"monthday-occurrence-active\" /> On the:<a class='inlineHelp' data-help='Select \"Day\" and one of the days of the month if the event needs to repeat on one or more days of the month e.g. the 1st and the 15th. Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third, fourth or last day of the week. A drop down menu will appear to the right so you can choose the day of the week.'><i class='icon-question-sign'></i></a></label> <select class='monthday-occurrence-number' disabled><option value='1'>First</option><option value='2'>Second</option><option value='3'>Third</option><option value='4'>Fourth</option><option value='-1'>Last</option></select><div class='monthday-container'><div class='select-container'> <select class='monthday-weekday-dropdown' disabled><option value='su'>Sunday</option><option value='mo'>Monday</option><option value='tu'>Tuesday</option><option value='we'>Wednesday</option><option value='th'>Thursday</option><option value='fr'>Friday</option><option value='sa'>Saturday</option><option value='' disabled='disabled'></option><option value='day'>Day</option><option value='weekday'>Weekday</option><option value='weekendday'>Weekend Day</option></select></div></div></div>",
-  "persistent_repeat_inputs": "<div class=\"content\"> <button class=\"close\">&#xd7;</button><h3 class=\"title\">Repeat Settings</h3><div class='freq-row row'> <label>Repeats:<a class='inlineHelp' data-help='The unit of time used to determine how often the event should repeat e.g. monthly. Defaults to \"never\".'><i class='icon-question-sign'></i></a></label> <select class='freq'><option value='daily'>Daily</option><option value='weekly'>Weekly</option><option value='monthly'>Monthly</option><option value='yearly'>Yearly</option></select><div class='nextOccurrence'></div></div><div class='interval-row row'> <label>Every:<a class='inlineHelp' data-help='This value works with the \"repeats\" unit of time to determine how often the event will repeat e.g. 2 with \"monthly\" means every 2 months. Defaults to 1 if you leave this blank.'><i class='icon-question-sign'></i></a></label> <input type='number' class='interval' min='1' pattern=\"\\d*\"/><span class='intervalTimeUnit'></span></div><div class=\"variable-content-row row\"></div><div class='dtstart-row row'> <label>Starting:<a class='inlineHelp' data-help='The date and time the event starts repeating. You should make this the date and time you want the event to initially appear.'><i class='icon-question-sign'></i></a></label> <input type='text' class='dtstart' /></div><div class='end-row row'> <label>Ending:<a class='inlineHelp' data-help='These buttons allow you to choose when the event should stop repeating. Choose \"After\" if you want to limit the event to a certain number of occurrences. Choose \"Until\" if you want the event to stop repeating on a specific date and time.'><i class='icon-question-sign'></i></a></label><div class=\"end-type\"><div> <label><input type=\"radio\" name=\"end-type\" class=\"never-rb\" /> <span class=\"prefix\">Never</span></label></div><div> <label><input type=\"radio\" name=\"end-type\" class=\"count-rb\" /> <span class=\"prefix\">After</span></label> <input type=\"number\" class=\"count\" min=\"1\" pattern=\"\\d*\" disabled/> <span class=\"suffix\">occurrence(s)</span></div><div> <label><input type=\"radio\" name=\"end-type\" class=\"until-rb\" /> <span class=\"prefix\">On</span></label> <input type=\"date\" class=\"until\" disabled/></div></div></div><div class=\"repeat-settings\"></div><div class='button-row row'> <button class='ok'>Ok</button> &nbsp; <button class='cancel'>Cancel</button></div></div>",
+  "persistent_repeat_inputs": "<div class=\"content\"> <button class=\"close\">&#xd7;</button><h3 class=\"title\">Repeat Settings</h3><div class='freq-row row'> <label>Repeats:<a class='inlineHelp' data-help='The unit of time used to determine how often the event should repeat e.g. monthly. Defaults to \"never\".'><i class='icon-question-sign'></i></a></label> <select class='freq'><option value='daily'>Daily</option><option value='weekly'>Weekly</option><option value='monthly'>Monthly</option><option value='yearly'>Yearly</option></select><div class='nextOccurrence'></div></div><div class='interval-row row'> <label>Every:<a class='inlineHelp' data-help='This value works with the \"repeats\" unit of time to determine how often the event will repeat e.g. 2 with \"monthly\" means every 2 months. Defaults to 1 if you leave this blank.'><i class='icon-question-sign'></i></a></label> <input type='number' class='interval' min='1' pattern=\"\\d*\"/><span class='intervalTimeUnit'></span></div><div class=\"variable-content-row row\"></div><div class='dtstart-row row'> <label>Starting:<a class='inlineHelp' data-help='The date and time the event starts repeating. You should make this the date and time you want the event to initially appear.'><i class='icon-question-sign'></i></a></label> <input type='text' class='dtstart' disabled/></div><div class='end-row row'> <label>Ending:<a class='inlineHelp' data-help='These buttons allow you to choose when the event should stop repeating. Choose \"After\" if you want to limit the event to a certain number of occurrences. Choose \"Until\" if you want the event to stop repeating on a specific date and time.'><i class='icon-question-sign'></i></a></label><div class=\"end-type\"><div> <label><input type=\"radio\" name=\"end-type\" class=\"never-rb\" /> <span class=\"prefix\">Never</span></label></div><div> <label><input type=\"radio\" name=\"end-type\" class=\"count-rb\" /> <span class=\"prefix\">After</span></label> <input type=\"number\" class=\"count\" min=\"1\" pattern=\"\\d*\" disabled/> <span class=\"suffix\">occurrence(s)</span></div><div> <label><input type=\"radio\" name=\"end-type\" class=\"until-rb\" /> <span class=\"prefix\">On</span></label> <input type=\"date\" class=\"until\" disabled/></div></div></div><div class=\"repeat-settings\"></div><div class='button-row row'> <button class='ok'>Ok</button> &nbsp; <button class='cancel'>Cancel</button></div></div>",
   "quick_entry_inputs": "<div class=\"dtstart-group\"><h2>Start Date</h2><div class=\"dtstart-inputs\"> <input class=\"ds-date\" title=\"From date\"> <input class=\"ds-time\" title=\"From time\"></div></div><div class=\"dtend-group\"><h2>End Date</h2><div class=\"dtend-inputs\"> <input class=\"de-date\" title=\"End date\"> <input class=\"de-time\" title=\"End time\"></div></div><div class=\"summary-group\"><h2>Summary</h2><div class=\"summary\"><textarea class=\"summary\"></textarea></div></div><div class=\"submit-button\"></div>",
   "weekly_inputs": "<div class='weekday-row row'> <label>On:<a class='inlineHelp' data-help='Use this value if the event needs to repeat on one or more days of the week e.g. Monday and Wednesday.'><i class='icon-question-sign'></i></a></label><div class='weekday-container pushbutton-container'></div></div>",
   "yearly_inputs": "<div class='year-month-row row'> <label>In:<a class='inlineHelp' data-help='You can limit the months the event will repeat in by selecting one or more months.'><i class='icon-question-sign'></i></a></label><div class='year-month-container pushbutton-container'></div></div><div class='year-day-row row'> <label><input type=\"checkbox\" class=\"year-day-occurrence-active\"/> On:<a class='inlineHelp' data-help='Select \"First\", \"Second\", \"Third\", \"Fourth\" or \"Last\" if the event needs to repeat on the first, second, third fourth or last day of the week that will appear in a drop down menu to the right.'><i class='icon-question-sign'></i></a></label> <select class='yearday-occurrence-number' disabled><option value='1'>First</option><option value='2'>Second</option><option value='3'>Third</option><option value='4'>Fourth</option><option value='-1'>Last</option></select> <select class='yearday-drop-down' disabled><option value='su'>Sunday</option><option value='mo'>Monday</option><option value='tu'>Tuesday</option><option value='we'>Wednesday</option><option value='th'>Thursday</option><option value='fr'>Friday</option><option value='sa'>Saturday</option><option value='' disabled='disabled'></option><option value='day'>Day</option><option value='weekday'>Weekday</option><option value='weekendday'>Weekend Day</option></select></div>"
@@ -471,7 +504,7 @@ Event_Calendar.Model = (function(){
 
   function publish(evtType, data) {
     postal.publish({
-      topic: "model." + evtType,
+      topic: "ecmodel." + evtType,
       data: data || {}
     });
     return data;
@@ -522,14 +555,13 @@ Event_Calendar.Model = (function(){
 
   function defaultValues() {
     var defaults = {
-      freq: "daily", 
-      interval: 1,
       dtstart: moment(roundDateToNearestHalfHour(new Date())).format(Event_Calendar.Cfg.MOMENT_DATE_TIME_FORMAT),
     };
     defaults.dtend = moment(defaults.dtstart).add(1, "hour").format(Event_Calendar.Cfg.MOMENT_DATE_TIME_FORMAT);
     return defaults;
   }
 
+  // Translates data into form appropriate for storage
   function formatTransition(prop, val) {
     if(prop == "interval" && val) {
       try { val = parseInt(val, 10); } catch(e) { controller.modelError(e); }
@@ -569,10 +601,11 @@ Event_Calendar.Model = (function(){
      * Set Data
      */
     setProperty : function setProperty(prop, val) {
+      //if(true) return publish("property_set_error", new Event_Calendar.Errors.InvalidError("Test " + prop + " error", prop));
       var err;
       if(Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW.indexOf(prop) === -1) {
         err = new Event_Calendar.Errors.UnknownPropertyError("Unknown property", prop);
-        return controller.modelError(err);
+        return publish("property_set_error", err);
       }
       // If setting to "", null etc. remove instead
       if(!val) {
@@ -582,7 +615,7 @@ Event_Calendar.Model = (function(){
       val = formatTransition(prop, val);
       if(!v.validateProperty(prop, val)) {
         err = new Event_Calendar.Errors.InvalidError("Invalid " + prop, prop);
-        return controller.modelError(err);
+        return publish("property_set_error", err);
       }
       // Validate event as a whole so errors involving multiple properties are caught.
       var e = this.getEvent();
@@ -590,44 +623,41 @@ Event_Calendar.Model = (function(){
       var validationErrors = v.validateEvent(e);
       if(validationErrors.length > 0) {
         err = new Event_Calendar.Errors.ErrorGroup("", validationErrors);
-        return controller.modelError(err);
+        return publish("property_set_error", err);
       }
       // Success!
       data[prop] = val;
-      return publish("updated", e);
+      return publish("property_set", {prop: prop, val: val});
     },
 
     setEvent : function setEvent(evt) {
-      publish("setevent");
       if(!evt) return;
       evt = _.pick(evt, _.identity); // Only allow properties that have a truthy value
       var temp = _.extend({}, data, evt);
       if(!temp.freq) temp = _.omit(temp, Event_Calendar.Cfg.REPEAT_PROPERTIES);
       Object.keys(temp).forEach(function(key){temp[key] = formatTransition(key, temp[key]);});
       var validationErrors = v.validateEvent(temp);
-      if(validationErrors.length === 0) {
-        data = temp;
-        return publish("updated", this.getEvent());
-      } 
-      else {
+      if(validationErrors.length > 0) {
         var err = new Event_Calendar.Errors.ErrorGroup(null, validationErrors);
-        return controller.modelError(err);
-      }
+        return publish("event_set_error", err);
+      } 
+      // Success!
+      data = temp;
+      return publish("event_set", this.getEvent());
     },
 
     setRepeatProperties : function setRepeatProperties(props) {
       var temp = _.extend({}, _.omit(data, Event_Calendar.Cfg.REPEAT_PROPERTIES), props);
       Object.keys(temp).forEach(function(key){temp[key] = formatTransition(key, temp[key]);});
       var validationErrors = v.validateEvent(temp);
-      if(validationErrors.length === 0) {
-        data = temp;
-        if(!savedState) savedState = _.extend({}, data);
-        return this.getEvent();
-      } 
-      else {
+      if(validationErrors.length > 0) {
         var err = new Event_Calendar.Errors.ErrorGroup(null, validationErrors);
-        return controller.modelError(err);
-      }
+        return publish("repeat_properties_set_error", err);
+      } 
+      // Success!
+      data = temp;
+      if(!savedState) savedState = _.extend({}, data);
+      return publish("repeat_properties_set", _.pick(temp, Object.keys(props)));
     },
 
     /**
@@ -644,7 +674,7 @@ Event_Calendar.Model = (function(){
           }
         }
       });
-      return publish("updated", this.getEvent());
+      return publish("property_removed", prop);
     },
 
     removeRepeatProperties : function removeRepeatProperties() {
@@ -657,6 +687,7 @@ Event_Calendar.Model = (function(){
     save : function save() {
       // Insert save to server code here.
       // if(!savedState) savedState = _.extend({}, temp);
+      // return publish("saved", getEvent());
     }
   };
 
@@ -673,7 +704,8 @@ Event_Calendar.Entry = (function(){
   var model,
       container,
       bi,         // basic inputs
-      rs;         // repeat setting inputs
+      rs,         // repeat setting inputs,
+      eh;         // error handler
 
   /**
    * Event Entry Constructor
@@ -690,6 +722,7 @@ Event_Calendar.Entry = (function(){
     bi.render(values);
     rs = new Event_Calendar.Repeat_Settings(".repeat-settings-container", this, model);
     rs.render();
+    eh = new Event_Calendar.ErrorHandler(container);
     initEvents();
   }
 
@@ -722,15 +755,6 @@ Event_Calendar.Entry = (function(){
 
     toggleRepeatSettings : function toggleRepeatSettings(evt){
       rs.toggleRepeatSettings(evt);
-    },
-
-    modelError : function modelError(err) {
-      // Check existence first in case model generates error on initial load
-      if(rs) rs.renderError(err);
-      if(bi) bi.renderError(err);
-      // Double console errors should disappear...UI wont' output to it when done
-      console.error(err);
-      return err;
     }
     
   };
@@ -749,7 +773,6 @@ Event_Calendar.Basic_Inputs = (function(){
   var controller,
       container,
       model,
-      errorHandler,
       summaryInput,
       dtstartDateInput,
       dtstartTimeInput,
@@ -771,7 +794,6 @@ Event_Calendar.Basic_Inputs = (function(){
     }
     controller = contr;
     model = md;
-    errorHandler = new Event_Calendar.ErrorHandler(container);
   }
 
   /**
@@ -805,18 +827,6 @@ Event_Calendar.Basic_Inputs = (function(){
       if(!Modernizr.touch || !Modernizr.inputtypes.date) {
         $(input).attr("type", "text").kendoTimePicker({});
       }
-    });
-  }
-
-  function renderError(err) {
-    errorHandler.render(err);
-  }
-
-  function testErrorHandling() {
-    errorHandler.removeAll();
-    var arr = _.difference(Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW, Event_Calendar.Cfg.REPEAT_PROPERTIES);
-    arr.forEach(function(prop){
-      renderError(new Event_Calendar.Errors.InvalidError(prop + " error", prop));
     });
   }
 
@@ -899,7 +909,6 @@ Event_Calendar.Basic_Inputs = (function(){
     initInputs();
     setValues(model.getEvent());
     initEvents();
-    // testErrorHandling();
   }
 
   /**
@@ -907,9 +916,7 @@ Event_Calendar.Basic_Inputs = (function(){
    */
   Basic_Inputs.prototype = {
 
-    render : render,
-
-    renderError : renderError
+    render : render
     
   };
 
@@ -927,10 +934,9 @@ Event_Calendar.Repeat_Settings = (function(){
   var container,
       controller,
       model,
+      validator,
       errorHandler,
       debouncedResize,
-      rsChoice,
-      rsContainer,
       variableContentContainer,
       pb,
       smScreenBreakPoint = Event_Calendar.Cfg.SM_SCREEN_BREAKPOINT,
@@ -969,6 +975,7 @@ Event_Calendar.Repeat_Settings = (function(){
     }
     controller = cont;
     model = md;
+    validator = Event_Calendar.Validate;
     errorHandler = new Event_Calendar.ErrorHandler(container);
   }
 
@@ -980,23 +987,6 @@ Event_Calendar.Repeat_Settings = (function(){
   
   function supportsTransitions() {
     return Modernizr.csstransitions;
-  }
-
-  // -----------------------------------------------
-  // 
-  //  Error Handling
-  //  
-  // -----------------------------------------------
-
-  function renderError(err) {
-    errorHandler.render(err);
-  }
-
-  function testErrorHandling() {
-    errorHandler.removeAll();
-    Event_Calendar.Cfg.REPEAT_PROPERTIES.forEach(function(prop){
-      renderError(new Event_Calendar.Errors.InvalidError(prop + " error", prop));
-    });
   }
 
 
@@ -1020,7 +1010,6 @@ Event_Calendar.Repeat_Settings = (function(){
   function toggleModal(evt) {
     var modal = container,
     showClass = "show";
-
     if(modal.hasClass( showClass ) ) {
       modal.removeClass( showClass );
     }
@@ -1057,13 +1046,13 @@ Event_Calendar.Repeat_Settings = (function(){
         parseFormats: Event_Calendar.Cfg.KENDO_DATE_PARSE_FORMATS,
         format: "MM/dd/yyyy",
         min: new Date("01/01/1970"), 
-        enabled: false
+        enabled: false,
+        change: validate
       });
     }
   }
   
   function initInputs() {
-    dtstartInput.attr("disabled", true);
     initUntil();
   }
 
@@ -1076,9 +1065,25 @@ Event_Calendar.Repeat_Settings = (function(){
     okBtn.off().on("click", save);
     endTypeGroup.off().on("change", endTypeChange);
     freqInput.off().on("change", freqChange);
-    intervalInput.off().on("change", intervalChange);
-    countInput.off("click", countClick).on("click", countClick);
-    untilInput.off("click", untilClick).on("click", untilClick);
+    intervalInput.off().on("change", validate);
+    countInput.off().on("click", countClick);
+    countInput.on("change", validate);
+    untilInput.off().on("click", untilClick);
+  }
+
+  // -----------------------------------------------
+  // 
+  //  Validate
+  //  
+  // -----------------------------------------------
+
+  function validate() {
+    errorHandler.removeAll();
+    var validationErrors = validator.validateRRule(getValues());
+    if(validationErrors.length > 0) {
+      var err = new Event_Calendar.Errors.ErrorGroup("", validationErrors);
+      errorHandler.render(err);
+    }
   }
 
 
@@ -1093,19 +1098,17 @@ Event_Calendar.Repeat_Settings = (function(){
   }
 
   function freqChange(evt) {
-    var freq = getFreq();
-    var ret = model.setProperty("freq", freq);
-    if( !(ret instanceof Error) ) {
-      model.setProperty("interval", 1);
-      var removeProps = _.without(Event_Calendar.Cfg.REPEAT_PROPERTIES, "freq", "interval", "count", "until");
-      model.removeProperty(removeProps);
-      setValues(model.getEvent());
-      //testErrorHandling();  // Comment out when not testing
+    var values = {
+      freq : getFreq(),
+      interval : 1
+    };
+    var endVal = getEndTypeValue();
+    if(endVal.count) {
+      values.count = endVal.count;
+    } else if(endVal.until) {
+      values.until = endVal.until;
     }
-  }
-
-  function intervalChange(evt) {
-    model.setProperty("interval", getInterval());
+    setValues(values);
   }
 
   function endTypeChange(evt) {
@@ -1123,33 +1126,25 @@ Event_Calendar.Repeat_Settings = (function(){
       numOcc = 5;           // 5 years
       unitOfTime = "years";
     }
-    model.removeProperty("count");
-    model.removeProperty("until");
     setCount("");
     setUntil("");
     if(endAfterRadio.is(":checked")) {
       disableUntil();
       countInput.prop("disabled", false);
       setCount(numOcc);
-      model.setProperty("count", numOcc);
     }
     else if(endUntilRadio.is(":checked")) {
       countInput.prop("disabled", true);
       enableUntil();
       var dtstart = moment(model.getProperty("dtstart"));
       until = dtstart.add(numOcc, unitOfTime).format(Event_Calendar.Cfg.MOMENT_DATE_FORMAT);
-      setUntil(until);
-      model.setProperty("until", until);     
+      setUntil(until);     
     }
     else {
       countInput.prop("disabled", true);
       disableUntil();
     }
-  }
-
-  function countChange(evt) {
-    model.removeProperty("until");
-    model.setProperty("count", getCount());
+    validate();
   }
 
   function countClick (evt) {
@@ -1160,14 +1155,12 @@ Event_Calendar.Repeat_Settings = (function(){
     endUntilRadio.prop("checked", true);
   }
 
-  function untilChange(evt) {
-    model.removeProps("count");
-    model.setProperty("until", getUntil());
-  }
-
   function save(evt) {
-    var ret = model.setRepeatProperties(getValues());
-    console.log("model.getEvent(): ", model.getEvent());
+    console.log("REPEAT SETTINGS: ", getValues());
+    console.log("MODEL: ", model.getEvent());
+    if($(".error", container).length === 0) {
+      // var ret = model.setRepeatProperties(getValues());
+    }
   }
 
 
@@ -1250,7 +1243,7 @@ Event_Calendar.Repeat_Settings = (function(){
   }
 
   function getDayOccurrenceValue() {
-    var freq = model.getProperty("freq");
+    var freq = freqInput.val();
     var num = freq == "monthly" ? monthDayOccurrenceNumberDropDown.val()
                                 : yearDayOccurrenceNumberDropDown.val();
     var byday = null, bysetpos = null, ret = {};
@@ -1311,14 +1304,14 @@ Event_Calendar.Repeat_Settings = (function(){
   // -----------------------------------------------
   
   function setValues(values) {
-    console.log("values: ", values);
     setPersistentValues(values);
     setVariableValues(values);
   }
 
   function setPersistentValues(values) {
-    setFreq(values.freq);
-    setInterval(values.freq, values.interval);
+    var freq = values.freq || "daily";
+    setFreq(freq);
+    setInterval(freq , values.interval || 1);
     setDtstart(values.dtstart);
     if(values.count) {
       setEndType("count", values.count);
@@ -1406,7 +1399,7 @@ Event_Calendar.Repeat_Settings = (function(){
 
   function setYearly(values) {
     var match, regex = Event_Calendar.Cfg.DAY_OCCURRENCE_REGEX;
-    pb.set(values.bymonth || [new Date(values.dtstart).getMonth() + 1]);
+    pb.set(values.bymonth || [new Date(model.getProperty("dtstart")).getMonth() + 1]);
     if(values.bysetpos && values.byday) {
       if(values.byday.length === 2) {
         yearDayDropDown.val("weekendday");
@@ -1497,6 +1490,7 @@ Event_Calendar.Repeat_Settings = (function(){
         buttonHeight: 25,
         data: [{text: "SU", value: "su"},{text: "MO", value: "mo"},{text: "TU", value: "tu"},{text: "WE", value: "we"},{text: "TH", value: "th"},{text: "FR", value: "fr"},{text: "SA", value: "sa"}]
       });
+      variableContentContainer.off().on("pushButtonSelected pushButtonDeselected", validate);
     }
     else if(freq == "monthly") {
       variableContentContainer.html(Event_Calendar.Templates.monthly_inputs);
@@ -1531,6 +1525,8 @@ Event_Calendar.Repeat_Settings = (function(){
           {text: 31, value: 31}
         ]
       });
+      $(".monthday-occurrence-number, .monthday-weekday-dropdown").off().on("change", validate);
+      variableContentContainer.off().on("pushButtonSelected pushButtonDeselected", validate);
     }
     else if(freq == "yearly") {
       variableContentContainer.html(Event_Calendar.Templates.yearly_inputs);
@@ -1556,6 +1552,8 @@ Event_Calendar.Repeat_Settings = (function(){
           {text: "Oct", value: 10},{text: "Nov", value: 11},{text: "Dec", value: 12}
         ]
       });
+      $(".yearday-occurrence-number, .yearday-drop-down").off().on("change", validate);
+      variableContentContainer.off().on("pushButtonSelected pushButtonDeselected", validate);
     }
     else {
       variableContentContainer.html("");
@@ -1582,10 +1580,7 @@ Event_Calendar.Repeat_Settings = (function(){
 
     render : render,
 
-    toggleRepeatSettings : toggleRepeatSettings,
-
-    renderError : renderError
-  
+    toggleRepeatSettings : toggleRepeatSettings  
   };
 
   return Repeat_Settings;

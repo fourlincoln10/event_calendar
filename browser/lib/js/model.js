@@ -28,7 +28,7 @@ Event_Calendar.Model = (function(){
 
   function publish(evtType, data) {
     postal.publish({
-      topic: "model." + evtType,
+      topic: "ecmodel." + evtType,
       data: data || {}
     });
     return data;
@@ -79,14 +79,13 @@ Event_Calendar.Model = (function(){
 
   function defaultValues() {
     var defaults = {
-      freq: "daily", 
-      interval: 1,
       dtstart: moment(roundDateToNearestHalfHour(new Date())).format(Event_Calendar.Cfg.MOMENT_DATE_TIME_FORMAT),
     };
     defaults.dtend = moment(defaults.dtstart).add(1, "hour").format(Event_Calendar.Cfg.MOMENT_DATE_TIME_FORMAT);
     return defaults;
   }
 
+  // Translates data into form appropriate for storage
   function formatTransition(prop, val) {
     if(prop == "interval" && val) {
       try { val = parseInt(val, 10); } catch(e) { controller.modelError(e); }
@@ -126,10 +125,11 @@ Event_Calendar.Model = (function(){
      * Set Data
      */
     setProperty : function setProperty(prop, val) {
+      //if(true) return publish("property_set_error", new Event_Calendar.Errors.InvalidError("Test " + prop + " error", prop));
       var err;
       if(Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW.indexOf(prop) === -1) {
         err = new Event_Calendar.Errors.UnknownPropertyError("Unknown property", prop);
-        return controller.modelError(err);
+        return publish("property_set_error", err);
       }
       // If setting to "", null etc. remove instead
       if(!val) {
@@ -139,7 +139,7 @@ Event_Calendar.Model = (function(){
       val = formatTransition(prop, val);
       if(!v.validateProperty(prop, val)) {
         err = new Event_Calendar.Errors.InvalidError("Invalid " + prop, prop);
-        return controller.modelError(err);
+        return publish("property_set_error", err);
       }
       // Validate event as a whole so errors involving multiple properties are caught.
       var e = this.getEvent();
@@ -147,44 +147,41 @@ Event_Calendar.Model = (function(){
       var validationErrors = v.validateEvent(e);
       if(validationErrors.length > 0) {
         err = new Event_Calendar.Errors.ErrorGroup("", validationErrors);
-        return controller.modelError(err);
+        return publish("property_set_error", err);
       }
       // Success!
       data[prop] = val;
-      return publish("updated", e);
+      return publish("property_set", {prop: prop, val: val});
     },
 
     setEvent : function setEvent(evt) {
-      publish("setevent");
       if(!evt) return;
       evt = _.pick(evt, _.identity); // Only allow properties that have a truthy value
       var temp = _.extend({}, data, evt);
       if(!temp.freq) temp = _.omit(temp, Event_Calendar.Cfg.REPEAT_PROPERTIES);
       Object.keys(temp).forEach(function(key){temp[key] = formatTransition(key, temp[key]);});
       var validationErrors = v.validateEvent(temp);
-      if(validationErrors.length === 0) {
-        data = temp;
-        return publish("updated", this.getEvent());
-      } 
-      else {
+      if(validationErrors.length > 0) {
         var err = new Event_Calendar.Errors.ErrorGroup(null, validationErrors);
-        return controller.modelError(err);
-      }
+        return publish("event_set_error", err);
+      } 
+      // Success!
+      data = temp;
+      return publish("event_set", this.getEvent());
     },
 
     setRepeatProperties : function setRepeatProperties(props) {
       var temp = _.extend({}, _.omit(data, Event_Calendar.Cfg.REPEAT_PROPERTIES), props);
       Object.keys(temp).forEach(function(key){temp[key] = formatTransition(key, temp[key]);});
       var validationErrors = v.validateEvent(temp);
-      if(validationErrors.length === 0) {
-        data = temp;
-        if(!savedState) savedState = _.extend({}, data);
-        return this.getEvent();
-      } 
-      else {
+      if(validationErrors.length > 0) {
         var err = new Event_Calendar.Errors.ErrorGroup(null, validationErrors);
-        return controller.modelError(err);
-      }
+        return publish("repeat_properties_set_error", err);
+      } 
+      // Success!
+      data = temp;
+      if(!savedState) savedState = _.extend({}, data);
+      return publish("repeat_properties_set", _.pick(temp, Object.keys(props)));
     },
 
     /**
@@ -201,7 +198,7 @@ Event_Calendar.Model = (function(){
           }
         }
       });
-      return publish("updated", this.getEvent());
+      return publish("property_removed", prop);
     },
 
     removeRepeatProperties : function removeRepeatProperties() {
@@ -214,6 +211,7 @@ Event_Calendar.Model = (function(){
     save : function save() {
       // Insert save to server code here.
       // if(!savedState) savedState = _.extend({}, temp);
+      // return publish("saved", getEvent());
     }
   };
 
