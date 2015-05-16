@@ -431,9 +431,10 @@ $window-close-btn-color: #454545;
 // ---------------------------------------
 
 // Assumes Modernizr is being used
-html:not(.touch) .pushButtonsTable td:not(.filler):hover {
+html:not(.touch) .pushButtonsTable:not(.disabled) td:not(.filler):hover {
   // background-color: $light-blue;
   background-color: $orange-background;
+  cursor: pointer;
 }
 
 .pushButtonsTable {
@@ -442,8 +443,8 @@ html:not(.touch) .pushButtonsTable td:not(.filler):hover {
   td {
     background-color: $light-gray-2;
     border: 1px solid $input-border-color;
-    cursor: pointer;
     font-family: $serif-font-family;
+    cursor: default;
     padding: 4px;
     text-align: center;
   }

@@ -5,24 +5,32 @@ Event_Calendar.PushButtons = (function(){
   "use strict";
 
   var container,
-      controller,
       buttonElement = "td:not(.filler)",
       selectedData = [];
 
 
-  function PushButtons(containerSelector, cnt){
+  function PushButtons(containerSelector){
     container = $(containerSelector);
     if(container.length === 0) {
       console.error("PushButtons(): Unable to locate container.");
     }
-    controller = cnt;
-    registerEvents();
+    initEvents();
   }
 
-  function registerEvents () { 
+  function initEvents () { 
     container.off("click", buttonElement).on("click", buttonElement, buttonClicked);
   }
 
+  function disable() {
+    container.off("click", buttonElement);
+    $(".pushButtonsTable", container).addClass("disabled");
+  }
+
+  function enable() {
+    initEvents();
+    $(".pushButtonsTable", container).removeClass("disabled");
+  }
+  
   function buttonClicked (evt) {
     evt.preventDefault();
     var target = $(evt.target);
@@ -123,7 +131,9 @@ Event_Calendar.PushButtons = (function(){
   var api = {
     render : render,
     set : set, 
-    getSelectedData : getSelectedData
+    getSelectedData : getSelectedData,
+    enable : enable,
+    disable: disable
   };
 
   PushButtons.prototype = api;

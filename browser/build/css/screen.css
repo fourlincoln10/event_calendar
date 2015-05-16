@@ -222,16 +222,17 @@
   transform: translateX(-50%) scale(1);
   visibility: visible; }
 
-html:not(.touch) .pushButtonsTable td:not(.filler):hover {
-  background-color: #ffa500; }
+html:not(.touch) .pushButtonsTable:not(.disabled) td:not(.filler):hover {
+  background-color: #ffa500;
+  cursor: pointer; }
 
 .pushButtonsTable {
   border-collapse: collapse; }
   .pushButtonsTable td {
     background-color: #f7f7f7;
     border: 1px solid #9d9d9d;
-    cursor: pointer;
     font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    cursor: default;
     padding: 4px;
     text-align: center; }
   .pushButtonsTable .filler {

@@ -23,7 +23,7 @@ Event_Calendar.Entry = (function(){
     container.html(Event_Calendar.Templates.entry_container);
     bi = new Event_Calendar.Basic_Inputs(".basic-inputs-container", this, model);
     bi.render(values);
-    rs = new Event_Calendar.Repeat_Settings(".repeat-settings-container", this, model);
+    rs = new Event_Calendar.Repeat_Settings(".repeat-settings-container", model);
     rs.render();
     eh = new Event_Calendar.ErrorHandler(container);
     initEvents();
