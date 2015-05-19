@@ -53,15 +53,17 @@ Event_Calendar.Cfg = {
   WEEKLY_INTERVAL_TIME_UNIT   : "week(s)",
   MONTHLY_INTERVAL_TIME_UNIT  : "month(s)",
   YEARLY_INTERVAL_TIME_UNIT   : "year(s)",
+  SUMMARY_ERR_MSG             : "Must be 64-characters or less",
+  DESCRIPTION_ERROR           : "Must be 256-characters or less",
   FREQ_ERR_MSG                : "Invalid frequency",
+  INTERVAL_REQUIRED_ERR_MSG   : "Required",
   INTERVAL_ERR_MSG            : "Must be an integer >= 1",
-  DTSTART_ERR_MSG             : "Invalid date",
+  INVALID_DATE_ERR_MSG        : "Invalid date",
   DTSTART_REQUIRED_ERR_MSG    : "Required",
   DTEND_REQUIRED_ERR_MSG      : "Required",
   END_BEFORE_START_ERR_MSG    : "End date must be after start date",
   DTSTART_TOO_OLD_ERR_MSG     : "Start date too far in past",
-  COUNT_ERR_MSG               : "Must be empty or an integer >= 1",
-  UNTIL_ERR_MSG               : "Invalid date",
+  COUNT_ERR_MSG               : "Must be an integer >= 1",
   COUNT_AND_UNTIL_ERR_MSG     : "Can't have both count and until",
   BYDAY_ERR_MSG               : "Invalid byday",
   BYMONTHDAY_ERR_MSG          : "Integer between 1 and 31 (inclusive)",
@@ -141,25 +143,6 @@ Event_Calendar.ErrorHandler = (function(){
   "use strict";
   
   var container;
-  
-  function ErrorHandler(cnt) {
-    container = cnt;
-    subscribe("ecmodel.property_set_error", render);
-    subscribe("ecmodel.property_set", propertySet);
-    subscribe("ecmodel.event_set_error", modelEventSetError);
-    subscribe("ecmodel.event_set", removeAll);
-    subscribe("ecmodel.repeat_properties_set_error", repeatPropertiesError);
-    subscribe("ecmodel.repeat_properties_set", removeRepeatPropertyErrors);
-    subscribe("ecrs.invalid", repeatPropertiesError);
-    subscribe("ecrs.valid", removeRepeatPropertyErrors);
-  }
-
-  function subscribe(topic, callback) {
-    postal.subscribe({
-      topic: topic,
-      callback: callback
-    });
-  }
 
   function propertySet(p) {
     removePropError(p.prop);
@@ -257,13 +240,16 @@ Event_Calendar.ErrorHandler = (function(){
   }
 
   // API
-  ErrorHandler.prototype = {
+  var api = {
+    container : container,
+    errorsPresent : errorsPresent,
     render : render, 
     removePropError : removePropError,
+    removeRepeatPropertyErrors : removeRepeatPropertyErrors,
     removeAll : removeAll
   };
 
-  return ErrorHandler;
+  return api;
 })();
 
 /**
@@ -331,8 +317,6 @@ Event_Calendar.Validate = {
       return this.validateSummary(val);
     } else if (prop == "description") {
       return this.validateDescription(val);
-    } else if (prop == "repeatType") {
-      return this.validateRepeatType(val);
     } 
     return false;
   },
@@ -343,73 +327,105 @@ Event_Calendar.Validate = {
     moment(d).isValid();
   },
 
-  validateRepeatType : function validateRepeatType(rt) {
-    return typeof rt == "string" && (rt === "simple" || rt === "custom");
-  },
-
   validateDtstart : function validateDtstart(dtstart) {
-    return this.validateIsoDateString(dtstart) && (+new Date(dtstart) > +new Date("01/01/1970"));
+    if(!this.validateIsoDateString(dtstart)) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.INVALID_DATE_ERR_MSG, "dtstart");
+    }
+    if(+new Date(dtstart) > +new Date("01/01/1970")) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.DTSTART_TOO_OLD_ERR_MSG, "dtstart");
+    }
+    return true;
   },
 
   validateDtend : function validateDtend(dtend) {
-    return this.validateIsoDateString(dtend);
+    if(!this.validateIsoDateString(dtend)) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.INVALID_DATE_ERR_MSG, "dtend");
+    }
+    return true;
   },
 
   validateSummary : function validateSummary(sum) {
-    return typeof sum === "string";
+    if(sum && sum.length > 64) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.SUMMARY_ERROR, "summary");
+    }
+    return true;
   },
 
   validateDescription : function validateDescription(desc) {
-    return typeof desc === "string";
+    if(desc && desc.length > 256) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.DESCRIPTION_ERROR, "description");
+    }
+    return true;
   },
 
   validateFreq : function validateFreq(freq) {
-    return typeof freq == "string" && Event_Calendar.Cfg.FREQ_VALUES.indexOf(freq) > -1;
+    if(freq && Event_Calendar.Cfg.FREQ_VALUES.indexOf(freq) > -1) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.FREQ_ERR_MSG, "freq");
+    }
+    return true;
   },
 
   validateInterval : function validateInterval(interval) {
-    return typeof interval !== "undefined" && Event_Calendar.Helpers.isInteger(interval) && interval > 0;
+    if(!interval) {
+      return new Event_Calendar.Errors.RequiredError(Event_Calendar.Cfg.INTERVAL_REQUIRED_ERR_MSG, "interval");
+    }
+    if(!Event_Calendar.Helpers.isInteger(interval) || interval < 1) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.INTERVAL_ERR_MSG, "interval");
+    }
+    return true;
   },
 
   validateCount : function validateCount(count) {
-    return typeof count !== "undefined" && Event_Calendar.Helpers.isInteger(count) && count > 0;
+    if(count && (!Event_Calendar.Helpers.isInteger(count) || count < 1)) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.COUNT_ERR_MSG, "count");
+    }
+    return true;
   },
 
   validateUntil : function validateUntil(until) {
-    return this.validateIsoDateString(until);
+    if(until && !this.validateIsoDateString(until)) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.INVALID_DATE_ERR_MSG, "until");
+    }
+    return true;
   },
 
   validateByday : function validateByday(byday) {
-    if(typeof byday == "undefined") return;
+    if(!byady) return true;
     function validate(day) {
       return day.search(Event_Calendar.Cfg.BYDAY_REGEX) > -1;
     }
     if(Array.isArray(byday)) {
-      return byday.length > 0 &&
-             _.every(byday, function(day) { return validate(day);});
+      if(byday.length === 0 || !_.every(byday, function(day) { return validate(day);})) {
+        return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.BYDAY_ERR_MSG, "byday");
+      }
     }
-    return validate(byday);
+    else {
+      if(!validate(byday)) {
+        return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.BYDAY_ERR_MSG, "byday");
+      }
+    }
+    return true;
   },
 
   validateBymonth : function validateBymonth(bymonth) {
-    return typeof bymonth !== "undefined" && Array.isArray(bymonth) && bymonth.length > 0 && _.every(bymonth, function(month) {
-      return Event_Calendar.Helpers.isInteger(month) && typeof month === "number" && (month >= 1 && month <= 12);
-    });
+    if(!Array.isArray(bymonth) || bymonth.length < 1 || !_.every(bymonth, function(month) { return Event_Calendar.Helpers.isInteger(month) && typeof month === "number" && (month >= 1 && month <= 12); })) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.BYMONTH_ERR_MSG, "bymonth");
+    }
+    return true;
   },
 
   validateBymonthday : function validateBymonthday(bymonthday) {
-    return  typeof bymonthday !== "undefined" &&
-            Array.isArray(bymonthday) &&
-            bymonthday.length > 0 &&
-            _.every(bymonthday, function(md) {
-              return Event_Calendar.Helpers.isInteger(md) && (md >= 1 && md <= 31);
-            });
+    if(!Array.isArray(bymonthday) || bymonthday.lengh < 1 || !_.every(bymonthday, function(md) { return Event_Calendar.Helpers.isInteger(md) && (md >= 1 && md <= 31); })) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.BYMONTHDAY_ERR_MSG, "bymonthday");
+    }
+    return true;
   },
 
   validateBysetpos : function validateBysetpos(bysetpos) {
-    return  typeof bysetpos !== "undefined" &&
-            Event_Calendar.Helpers.isInteger(bysetpos) &&
-            (bysetpos ===  -1 || (bysetpos >= 1 && bysetpos <= 4));
+    if(!Event_Calendar.Helpers.isInteger(bysetpos) || !(bysetpos ===  -1 || (bysetpos >= 1 && bysetpos <= 4))) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.BYSETPOS_ERR_MSG, "bysetpos");
+    }
+    return true;
   },
 
   /**
@@ -419,10 +435,10 @@ Event_Calendar.Validate = {
    */
   validateRRule : function validateRRule(r) {
     var errors = [], ctx = this;
-    Object.keys(r).forEach(function(prop){
-      if(!ctx.validateProperty(prop, r[prop])) {
-        var reason = typeof Event_Calendar.Cfg[prop.toUpperCase() + "_ERR_MSG"] !== "undefined" ? Event_Calendar.Cfg[prop.toUpperCase() + "_ERR_MSG"] : "Unknown error";
-        errors.push(new Event_Calendar.Errors.InvalidError(reason, prop));
+    Object.keys(r).forEach(function(prop) {
+      var ret = ctx.validateProperty(prop, r[prop]);
+      if(ret instanceof Error) {
+        errors.push(ret);
       }
     });
     if(!r.freq) {
@@ -452,9 +468,9 @@ Event_Calendar.Validate = {
     // Validate individual properties
     if(Object.keys(rrule).length > 0) { errors = errors.concat(this.validateRRule(rrule)); }
     Object.keys(everythingElse).forEach(function(prop){
-      if(!ctx.validateProperty(prop, e[prop])) {
-        var reason = typeof Event_Calendar.Cfg[prop.toUpperCase() + "_ERR_MSG"] !== "undefined" ? Event_Calendar.Cfg[prop.toUpperCase() + "_ERR_MSG"] : "Unknown error";
-        errors.push(new Event_Calendar.Errors.InvalidError(reason, prop));
+      var ret = ctx.validateProperty(prop, e[prop]);
+      if(ret instanceof Error) {
+        errors.push(ret);
       }
     });
     // Multi-field validation
@@ -488,25 +504,28 @@ Event_Calendar.Model = (function(){
   "use strict";
 
   /**
+   * Private Properties
+   */
+  var cfg,
+      container,
+      controller,
+      data,
+      savedState,
+      v = Event_Calendar.Validate;
+
+  /**
    * Model Constructor
    * @param {Object} evt An object containing event properties
    */
-  function Model(values, cnt){
+  function Model(values, cont, ctrl) {
+    cfg = Event_Calendar.Cfg;
+    container = cont;
+    controller = ctrl;
     data = {};
-    values = values || defaultValues();
     savedState = null;
-    controller = cnt;
+    values = values || defaultValues();
     this.setEvent(values);
   }
-
-
-  /**
-   * Private Properties / Functions
-   */
-  var v = Event_Calendar.Validate,
-      data,
-      savedState,
-      controller;
 
   function publish(evtType, data) {
     postal.publish({
@@ -521,13 +540,6 @@ Event_Calendar.Model = (function(){
       topic: topic,
       callback: callback
     });
-  }
-
-  function processOutgoingEvent(values) {
-    Object.keys(values).forEach(function(key){
-      values[key] = processOutgoingProperty(key, values[key]);
-    });
-    return values;
   }
 
   /**
@@ -560,27 +572,26 @@ Event_Calendar.Model = (function(){
   }
 
   function defaultValues() {
-    var defaults = {
-      dtstart: moment(roundDateToNearestHalfHour(new Date())).format(Event_Calendar.Cfg.MOMENT_DATE_TIME_FORMAT),
+    var dtstart = moment(roundDateToNearestHalfHour(new Date())).format(cfg.MOMENT_DATE_TIME_FORMAT);
+    var dtend = moment(dtstart).add(1, "hour").format(cfg.MOMENT_DATE_TIME_FORMAT);
+    return {
+      dtstart: dtstart,
+      dtend: dtend
     };
-    defaults.dtend = moment(defaults.dtstart).add(1, "hour").format(Event_Calendar.Cfg.MOMENT_DATE_TIME_FORMAT);
-    return defaults;
   }
 
   // Translates data into form appropriate for storage
-  function formatTransition(prop, val) {
-    if(prop == "interval" && val) {
-      try { val = parseInt(val, 10); } catch(e) { controller.modelError(e); }
-    }
-    if(prop == "count" && val) {
-      try { val = parseInt(val, 10); } catch(e) { controller.modelError(e); }
-    }
-    if(prop == "until" && val) {
+  function formatTransition(attrs) {
+    if( attrs.interval ) {
+      attrs.interval = parseInt(attrs.interval, 10);
+    } else if( attrs.count ) {
+      attrs.count = parseInt(attrs.count, 10);
+    } else if( attrs.until ) {
       var dtstart = moment(data.dtstart);
-      val = moment(val).hours(dtstart.hours()).minutes(dtstart.minutes()).format(Event_Calendar.Cfg.MOMENT_DATE_TIME_FORMAT);
-      val = Event_Calendar.Helpers.convertDateTimeStrToUTC(val);
+      attrs.until = moment(attrs.until).hours(dtstart.hours()).minutes(dtstart.minutes()).format(cfg.MOMENT_DATE_TIME_FORMAT);
+      attrs.until = Event_Calendar.Helpers.convertDateTimeStrToUTC(attrs.until);
     }
-    return val;
+    return attrs;
   }
 
   /**
@@ -606,41 +617,47 @@ Event_Calendar.Model = (function(){
     /**
      * Set Data
      */
-    setProperty : function setProperty(prop, val) {
-      //if(true) return publish("property_set_error", new Event_Calendar.Errors.InvalidError("Test " + prop + " error", prop));
-      var err;
-      if(Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW.indexOf(prop) === -1) {
-        err = new Event_Calendar.Errors.UnknownPropertyError("Unknown property", prop);
-        return publish("property_set_error", err);
+     
+    setProperty : function setProperty(key, val) {
+      var attr, attrs, prev, previousAttributes, curr, currentAttributes, changes, ret;
+      if (key === null) return this;
+      // Allow both (key, value) and {key: value} arguments
+      if (typeof key === 'object') {
+        attrs = key;
+      } else {
+        (attrs = {})[key] = val;
       }
-      // If setting to "", null etc. remove instead
-      if(!val) {
-        return this.removeProperty(prop);
+      attrs = formatTransition(attrs);
+      changes = [];
+      prev = this.getEvent();
+      curr = this.getEvent();
+      for(attr in attrs) {
+        val = attrs[attr];
+        if (!_.isEqual(prev[attr], val)) {
+          changes.push(attr);
+          if( (cfg.REPEAT_PROPERTIES.index(attr) > -1) && !val) {
+            delete curr[attr];
+          } else {
+            curr[attr] = val;
+          }
+        }
       }
-      // Format/Validate individual property
-      val = formatTransition(prop, val);
-      if(!v.validateProperty(prop, val)) {
-        err = new Event_Calendar.Errors.InvalidError("Invalid " + prop, prop);
-        return publish("property_set_error", err);
+      ret = v.validateEvent(curr);
+      if(ret instanceof Error) {
+        return publish("property_set_error", ret);
       }
-      // Validate event as a whole so errors involving multiple properties are caught.
-      var e = this.getEvent();
-      e[prop] = val;
-      var validationErrors = v.validateEvent(e);
-      if(validationErrors.length > 0) {
-        err = new Event_Calendar.Errors.ErrorGroup("", validationErrors);
-        return publish("property_set_error", err);
-      }
-      // Success!
-      data[prop] = val;
-      return publish("property_set", {prop: prop, val: val});
+      //return publish("property_set", {prop: key, val: val});
+      changes.forEach(function(attr){
+        container.trigger("change:" + attr, curr[attr]);
+      });
+      return this;
     },
 
     setEvent : function setEvent(evt) {
       if(!evt) return;
       evt = _.pick(evt, _.identity); // Only allow properties that have a truthy value
       var temp = _.extend({}, data, evt);
-      if(!temp.freq) temp = _.omit(temp, Event_Calendar.Cfg.REPEAT_PROPERTIES);
+      if(!temp.freq) temp = _.omit(temp, cfg.REPEAT_PROPERTIES);
       Object.keys(temp).forEach(function(key){temp[key] = formatTransition(key, temp[key]);});
       var validationErrors = v.validateEvent(temp);
       if(validationErrors.length > 0) {
@@ -653,7 +670,7 @@ Event_Calendar.Model = (function(){
     },
 
     setRepeatProperties : function setRepeatProperties(props) {
-      var temp = _.extend({}, _.omit(data, Event_Calendar.Cfg.REPEAT_PROPERTIES), props);
+      var temp = _.extend({}, _.omit(data, cfg.REPEAT_PROPERTIES), props);
       Object.keys(temp).forEach(function(key){temp[key] = formatTransition(key, temp[key]);});
       var validationErrors = v.validateEvent(temp);
       if(validationErrors.length > 0) {
@@ -676,7 +693,7 @@ Event_Calendar.Model = (function(){
           delete data[p];
           // Can't have an RRule w/o a freq
           if(p == "freq") {
-            data = _.omit(data, Event_Calendar.Cfg.REPEAT_PROPERTIES);
+            data = _.omit(data, cfg.REPEAT_PROPERTIES);
           }
         }
       });
@@ -700,7 +717,6 @@ Event_Calendar.Model = (function(){
   return Model;
 
 })();
-
 /**
  * Event Entry Controller
  */
@@ -723,12 +739,12 @@ Event_Calendar.Entry = (function(){
       throw new Error("Entry(): Unable to locate container");
     }
     model = new Event_Calendar.Model(values, this);
+    Event_Calendar.ErrorHandler.container = container;
     container.html(Event_Calendar.Templates.entry_container);
     bi = new Event_Calendar.Basic_Inputs(".basic-inputs-container", this, model);
     bi.render(values);
     rs = new Event_Calendar.Repeat_Settings(".repeat-settings-container", model);
     rs.render();
-    eh = new Event_Calendar.ErrorHandler(container);
     initEvents();
   }
 
@@ -776,18 +792,18 @@ Event_Calendar.Entry = (function(){
 Event_Calendar.Basic_Inputs = (function(){
   "use strict";
 
-  var controller,
+  var allDayInput,
       container,
-      model,
-      summaryInput,
-      dtstartDateInput,
-      dtstartTimeInput,
+      controller,
+      descriptionInput,
       dtendDateInput,
       dtendTimeInput,
-      allDayInput,
-      repeatInput,
+      dtstartDateInput,
+      dtstartTimeInput,
       locationInput,
-      descriptionInput;
+      model,
+      repeatInput,
+      summaryInput;
 
   /**
    * Basic Inputs Constructor
@@ -822,8 +838,8 @@ Event_Calendar.Basic_Inputs = (function(){
     [dtstartDateInput, dtendDateInput].forEach(function(input){
       if(!Modernizr.touch || !Modernizr.inputtypes.date) {
         $(input).attr("type", "text").kendoDatePicker({
-          parseFormats: Event_Calendar.Cfg.KENDO_DATE_PARSE_FORMATS,
-          format: "MM/dd/yyyy",
+          parseFormats: cfg.KENDO_DATE_PARSE_FORMATS,
+          format: cfg.KENDO_DATE_DISPLAY_FORMAT,
           min: new Date("01/01/1970")
         });
       }
@@ -838,23 +854,54 @@ Event_Calendar.Basic_Inputs = (function(){
 
   function initEvents() {
     repeatInput.off().on("click", function(evt){controller.toggleRepeatSettings(evt);});
+    summaryInput.off().on("change", summaryChange);
   }
+
+  // -----------------------------------------------
+  // 
+  //  Events
+  //  
+  // -----------------------------------------------
+
+  
+  
+  function summaryChange(evt) {
+    var isValid = validator.validateProperty(getSummary());
+    if(!isValid) {
+      
+    }
+  }
+
+
+  // -----------------------------------------------
+  // 
+  //  Get data
+  //  
+  // -----------------------------------------------
+  
+  function getSummary() {
+    return summaryInput.val();
+  }
+
+  function 
+
+  // -----------------------------------------------
+  // 
+  //  Set data
+  //  
+  // -----------------------------------------------
 
   function setSummary(summary) {
     summaryInput.val(summary);
   }
 
   function setDateField(input, value) {
-    var kendoDatePicker = input.data("kendoDatePicker");
-    if(kendoDatePicker) {
-      kendoDatePicker.value(value);
-    }
-    else {
-      if(value instanceof Date) {
-        input[0].valueAsDate = value;
-      } else {
-        input[0].value = value ? moment(value).format(Event_Calendar.Cfg.MOMENT_DATE_FORMAT) : "";
-      }
+    var kendo = input.data("kendoDatePicker");
+    val = val ? moment(val).format(cfg.MOMENT_DATE_FORMAT) : "";
+    if(kendo) {
+      kendo.value(val);
+    } else {
+      untilInput[0].value = val;
     }
   }
 
@@ -976,12 +1023,12 @@ Event_Calendar.Repeat_Settings = (function(){
   function Repeat_Settings(containerSelector, md) {
     container = $(containerSelector);
     if(container.length === 0) {
-      throw new Error("Basic_Inputs(): Unable to locate container");
+      throw new Error("Repeat_Settings(): Unable to locate container");
     }
     cfg = Event_Calendar.Cfg;
     model = md;
     validator = Event_Calendar.Validate;
-    errorHandler = new Event_Calendar.ErrorHandler(container);
+    errorHandler = Event_Calendar.ErrorHandler;
   }
 
 
@@ -1043,12 +1090,14 @@ Event_Calendar.Repeat_Settings = (function(){
   // -----------------------------------------------
 
   function validate() {
-    errorHandler.removeAll();
+    errorHandler.removeRepeatPropertyErrors();
     var validationErrors = validator.validateRRule(getValues());
     if(validationErrors.length > 0) {
       var err = new Event_Calendar.Errors.ErrorGroup("", validationErrors);
       errorHandler.render(err);
+      return false;
     }
+    return true;
   }
 
 
@@ -1126,14 +1175,18 @@ Event_Calendar.Repeat_Settings = (function(){
   }
 
   function save(evt) {
-    console.log("REPEAT SETTINGS: ", getValues());
-    console.log("MODEL: ", model.getEvent());
-    if($(".error", container).length === 0) {
-      // var ret = model.setRepeatProperties(getValues());
+    if(errorHandler.errorsPresent()) {
+      return console.error("Please correct errors before saving.");
+    }
+    var ret = model.setRepeatProperties(getValues());
+    if(ret instanceof Error) {
+      errorHandler.render(ret);
     }
     else {
-      console.error("Please correct errors before saving.");
+      toggleModal();
     }
+    //console.log("REPEAT SETTINGS: ", getValues());
+    console.log("MODEL: ", model.getEvent());
   }
 
 
@@ -1316,8 +1369,8 @@ Event_Calendar.Repeat_Settings = (function(){
 
   function setInterval(interval) {
     intervalInput.val(interval);
-    var freq = getFreq();
     var timeUnit = "";
+    var freq = getFreq();
     if(freq == "daily") {
       timeUnit = " " + cfg.DAILY_INTERVAL_TIME_UNIT;
     } else if(freq == "weekly") {

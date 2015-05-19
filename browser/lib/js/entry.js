@@ -20,12 +20,12 @@ Event_Calendar.Entry = (function(){
       throw new Error("Entry(): Unable to locate container");
     }
     model = new Event_Calendar.Model(values, this);
+    Event_Calendar.ErrorHandler.container = container;
     container.html(Event_Calendar.Templates.entry_container);
     bi = new Event_Calendar.Basic_Inputs(".basic-inputs-container", this, model);
     bi.render(values);
     rs = new Event_Calendar.Repeat_Settings(".repeat-settings-container", model);
     rs.render();
-    eh = new Event_Calendar.ErrorHandler(container);
     initEvents();
   }
 

@@ -7,25 +7,6 @@ Event_Calendar.ErrorHandler = (function(){
   "use strict";
   
   var container;
-  
-  function ErrorHandler(cnt) {
-    container = cnt;
-    subscribe("ecmodel.property_set_error", render);
-    subscribe("ecmodel.property_set", propertySet);
-    subscribe("ecmodel.event_set_error", modelEventSetError);
-    subscribe("ecmodel.event_set", removeAll);
-    subscribe("ecmodel.repeat_properties_set_error", repeatPropertiesError);
-    subscribe("ecmodel.repeat_properties_set", removeRepeatPropertyErrors);
-    subscribe("ecrs.invalid", repeatPropertiesError);
-    subscribe("ecrs.valid", removeRepeatPropertyErrors);
-  }
-
-  function subscribe(topic, callback) {
-    postal.subscribe({
-      topic: topic,
-      callback: callback
-    });
-  }
 
   function propertySet(p) {
     removePropError(p.prop);
@@ -123,11 +104,14 @@ Event_Calendar.ErrorHandler = (function(){
   }
 
   // API
-  ErrorHandler.prototype = {
+  var api = {
+    container : container,
+    errorsPresent : errorsPresent,
     render : render, 
     removePropError : removePropError,
+    removeRepeatPropertyErrors : removeRepeatPropertyErrors,
     removeAll : removeAll
   };
 
-  return ErrorHandler;
+  return api;
 })();

@@ -33,8 +33,6 @@ Event_Calendar.Validate = {
       return this.validateSummary(val);
     } else if (prop == "description") {
       return this.validateDescription(val);
-    } else if (prop == "repeatType") {
-      return this.validateRepeatType(val);
     } 
     return false;
   },
@@ -45,73 +43,105 @@ Event_Calendar.Validate = {
     moment(d).isValid();
   },
 
-  validateRepeatType : function validateRepeatType(rt) {
-    return typeof rt == "string" && (rt === "simple" || rt === "custom");
-  },
-
   validateDtstart : function validateDtstart(dtstart) {
-    return this.validateIsoDateString(dtstart) && (+new Date(dtstart) > +new Date("01/01/1970"));
+    if(!this.validateIsoDateString(dtstart)) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.INVALID_DATE_ERR_MSG, "dtstart");
+    }
+    if(+new Date(dtstart) > +new Date("01/01/1970")) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.DTSTART_TOO_OLD_ERR_MSG, "dtstart");
+    }
+    return true;
   },
 
   validateDtend : function validateDtend(dtend) {
-    return this.validateIsoDateString(dtend);
+    if(!this.validateIsoDateString(dtend)) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.INVALID_DATE_ERR_MSG, "dtend");
+    }
+    return true;
   },
 
   validateSummary : function validateSummary(sum) {
-    return typeof sum === "string";
+    if(sum && sum.length > 64) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.SUMMARY_ERROR, "summary");
+    }
+    return true;
   },
 
   validateDescription : function validateDescription(desc) {
-    return typeof desc === "string";
+    if(desc && desc.length > 256) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.DESCRIPTION_ERROR, "description");
+    }
+    return true;
   },
 
   validateFreq : function validateFreq(freq) {
-    return typeof freq == "string" && Event_Calendar.Cfg.FREQ_VALUES.indexOf(freq) > -1;
+    if(freq && Event_Calendar.Cfg.FREQ_VALUES.indexOf(freq) > -1) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.FREQ_ERR_MSG, "freq");
+    }
+    return true;
   },
 
   validateInterval : function validateInterval(interval) {
-    return typeof interval !== "undefined" && Event_Calendar.Helpers.isInteger(interval) && interval > 0;
+    if(!interval) {
+      return new Event_Calendar.Errors.RequiredError(Event_Calendar.Cfg.INTERVAL_REQUIRED_ERR_MSG, "interval");
+    }
+    if(!Event_Calendar.Helpers.isInteger(interval) || interval < 1) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.INTERVAL_ERR_MSG, "interval");
+    }
+    return true;
   },
 
   validateCount : function validateCount(count) {
-    return typeof count !== "undefined" && Event_Calendar.Helpers.isInteger(count) && count > 0;
+    if(count && (!Event_Calendar.Helpers.isInteger(count) || count < 1)) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.COUNT_ERR_MSG, "count");
+    }
+    return true;
   },
 
   validateUntil : function validateUntil(until) {
-    return this.validateIsoDateString(until);
+    if(until && !this.validateIsoDateString(until)) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.INVALID_DATE_ERR_MSG, "until");
+    }
+    return true;
   },
 
   validateByday : function validateByday(byday) {
-    if(typeof byday == "undefined") return;
+    if(!byady) return true;
     function validate(day) {
       return day.search(Event_Calendar.Cfg.BYDAY_REGEX) > -1;
     }
     if(Array.isArray(byday)) {
-      return byday.length > 0 &&
-             _.every(byday, function(day) { return validate(day);});
+      if(byday.length === 0 || !_.every(byday, function(day) { return validate(day);})) {
+        return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.BYDAY_ERR_MSG, "byday");
+      }
     }
-    return validate(byday);
+    else {
+      if(!validate(byday)) {
+        return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.BYDAY_ERR_MSG, "byday");
+      }
+    }
+    return true;
   },
 
   validateBymonth : function validateBymonth(bymonth) {
-    return typeof bymonth !== "undefined" && Array.isArray(bymonth) && bymonth.length > 0 && _.every(bymonth, function(month) {
-      return Event_Calendar.Helpers.isInteger(month) && typeof month === "number" && (month >= 1 && month <= 12);
-    });
+    if(!Array.isArray(bymonth) || bymonth.length < 1 || !_.every(bymonth, function(month) { return Event_Calendar.Helpers.isInteger(month) && typeof month === "number" && (month >= 1 && month <= 12); })) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.BYMONTH_ERR_MSG, "bymonth");
+    }
+    return true;
   },
 
   validateBymonthday : function validateBymonthday(bymonthday) {
-    return  typeof bymonthday !== "undefined" &&
-            Array.isArray(bymonthday) &&
-            bymonthday.length > 0 &&
-            _.every(bymonthday, function(md) {
-              return Event_Calendar.Helpers.isInteger(md) && (md >= 1 && md <= 31);
-            });
+    if(!Array.isArray(bymonthday) || bymonthday.lengh < 1 || !_.every(bymonthday, function(md) { return Event_Calendar.Helpers.isInteger(md) && (md >= 1 && md <= 31); })) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.BYMONTHDAY_ERR_MSG, "bymonthday");
+    }
+    return true;
   },
 
   validateBysetpos : function validateBysetpos(bysetpos) {
-    return  typeof bysetpos !== "undefined" &&
-            Event_Calendar.Helpers.isInteger(bysetpos) &&
-            (bysetpos ===  -1 || (bysetpos >= 1 && bysetpos <= 4));
+    if(!Event_Calendar.Helpers.isInteger(bysetpos) || !(bysetpos ===  -1 || (bysetpos >= 1 && bysetpos <= 4))) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.BYSETPOS_ERR_MSG, "bysetpos");
+    }
+    return true;
   },
 
   /**
@@ -121,10 +151,10 @@ Event_Calendar.Validate = {
    */
   validateRRule : function validateRRule(r) {
     var errors = [], ctx = this;
-    Object.keys(r).forEach(function(prop){
-      if(!ctx.validateProperty(prop, r[prop])) {
-        var reason = typeof Event_Calendar.Cfg[prop.toUpperCase() + "_ERR_MSG"] !== "undefined" ? Event_Calendar.Cfg[prop.toUpperCase() + "_ERR_MSG"] : "Unknown error";
-        errors.push(new Event_Calendar.Errors.InvalidError(reason, prop));
+    Object.keys(r).forEach(function(prop) {
+      var ret = ctx.validateProperty(prop, r[prop]);
+      if(ret instanceof Error) {
+        errors.push(ret);
       }
     });
     if(!r.freq) {
@@ -154,9 +184,9 @@ Event_Calendar.Validate = {
     // Validate individual properties
     if(Object.keys(rrule).length > 0) { errors = errors.concat(this.validateRRule(rrule)); }
     Object.keys(everythingElse).forEach(function(prop){
-      if(!ctx.validateProperty(prop, e[prop])) {
-        var reason = typeof Event_Calendar.Cfg[prop.toUpperCase() + "_ERR_MSG"] !== "undefined" ? Event_Calendar.Cfg[prop.toUpperCase() + "_ERR_MSG"] : "Unknown error";
-        errors.push(new Event_Calendar.Errors.InvalidError(reason, prop));
+      var ret = ctx.validateProperty(prop, e[prop]);
+      if(ret instanceof Error) {
+        errors.push(ret);
       }
     });
     // Multi-field validation

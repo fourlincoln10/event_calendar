@@ -5,18 +5,18 @@
 Event_Calendar.Basic_Inputs = (function(){
   "use strict";
 
-  var controller,
+  var allDayInput,
       container,
-      model,
-      summaryInput,
-      dtstartDateInput,
-      dtstartTimeInput,
+      controller,
+      descriptionInput,
       dtendDateInput,
       dtendTimeInput,
-      allDayInput,
-      repeatInput,
+      dtstartDateInput,
+      dtstartTimeInput,
       locationInput,
-      descriptionInput;
+      model,
+      repeatInput,
+      summaryInput;
 
   /**
    * Basic Inputs Constructor
@@ -51,8 +51,8 @@ Event_Calendar.Basic_Inputs = (function(){
     [dtstartDateInput, dtendDateInput].forEach(function(input){
       if(!Modernizr.touch || !Modernizr.inputtypes.date) {
         $(input).attr("type", "text").kendoDatePicker({
-          parseFormats: Event_Calendar.Cfg.KENDO_DATE_PARSE_FORMATS,
-          format: "MM/dd/yyyy",
+          parseFormats: cfg.KENDO_DATE_PARSE_FORMATS,
+          format: cfg.KENDO_DATE_DISPLAY_FORMAT,
           min: new Date("01/01/1970")
         });
       }
@@ -67,23 +67,54 @@ Event_Calendar.Basic_Inputs = (function(){
 
   function initEvents() {
     repeatInput.off().on("click", function(evt){controller.toggleRepeatSettings(evt);});
+    summaryInput.off().on("change", summaryChange);
   }
+
+  // -----------------------------------------------
+  // 
+  //  Events
+  //  
+  // -----------------------------------------------
+
+  
+  
+  function summaryChange(evt) {
+    var isValid = validator.validateProperty(getSummary());
+    if(!isValid) {
+      
+    }
+  }
+
+
+  // -----------------------------------------------
+  // 
+  //  Get data
+  //  
+  // -----------------------------------------------
+  
+  function getSummary() {
+    return summaryInput.val();
+  }
+
+  function 
+
+  // -----------------------------------------------
+  // 
+  //  Set data
+  //  
+  // -----------------------------------------------
 
   function setSummary(summary) {
     summaryInput.val(summary);
   }
 
   function setDateField(input, value) {
-    var kendoDatePicker = input.data("kendoDatePicker");
-    if(kendoDatePicker) {
-      kendoDatePicker.value(value);
-    }
-    else {
-      if(value instanceof Date) {
-        input[0].valueAsDate = value;
-      } else {
-        input[0].value = value ? moment(value).format(Event_Calendar.Cfg.MOMENT_DATE_FORMAT) : "";
-      }
+    var kendo = input.data("kendoDatePicker");
+    val = val ? moment(val).format(cfg.MOMENT_DATE_FORMAT) : "";
+    if(kendo) {
+      kendo.value(val);
+    } else {
+      untilInput[0].value = val;
     }
   }
 

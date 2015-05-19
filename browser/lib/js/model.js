@@ -6,25 +6,28 @@ Event_Calendar.Model = (function(){
   "use strict";
 
   /**
+   * Private Properties
+   */
+  var cfg,
+      container,
+      controller,
+      data,
+      savedState,
+      v = Event_Calendar.Validate;
+
+  /**
    * Model Constructor
    * @param {Object} evt An object containing event properties
    */
-  function Model(values, cnt){
+  function Model(values, cont, ctrl) {
+    cfg = Event_Calendar.Cfg;
+    container = cont;
+    controller = ctrl;
     data = {};
-    values = values || defaultValues();
     savedState = null;
-    controller = cnt;
+    values = values || defaultValues();
     this.setEvent(values);
   }
-
-
-  /**
-   * Private Properties / Functions
-   */
-  var v = Event_Calendar.Validate,
-      data,
-      savedState,
-      controller;
 
   function publish(evtType, data) {
     postal.publish({
@@ -39,13 +42,6 @@ Event_Calendar.Model = (function(){
       topic: topic,
       callback: callback
     });
-  }
-
-  function processOutgoingEvent(values) {
-    Object.keys(values).forEach(function(key){
-      values[key] = processOutgoingProperty(key, values[key]);
-    });
-    return values;
   }
 
   /**
@@ -78,27 +74,26 @@ Event_Calendar.Model = (function(){
   }
 
   function defaultValues() {
-    var defaults = {
-      dtstart: moment(roundDateToNearestHalfHour(new Date())).format(Event_Calendar.Cfg.MOMENT_DATE_TIME_FORMAT),
+    var dtstart = moment(roundDateToNearestHalfHour(new Date())).format(cfg.MOMENT_DATE_TIME_FORMAT);
+    var dtend = moment(dtstart).add(1, "hour").format(cfg.MOMENT_DATE_TIME_FORMAT);
+    return {
+      dtstart: dtstart,
+      dtend: dtend
     };
-    defaults.dtend = moment(defaults.dtstart).add(1, "hour").format(Event_Calendar.Cfg.MOMENT_DATE_TIME_FORMAT);
-    return defaults;
   }
 
   // Translates data into form appropriate for storage
-  function formatTransition(prop, val) {
-    if(prop == "interval" && val) {
-      try { val = parseInt(val, 10); } catch(e) { controller.modelError(e); }
-    }
-    if(prop == "count" && val) {
-      try { val = parseInt(val, 10); } catch(e) { controller.modelError(e); }
-    }
-    if(prop == "until" && val) {
+  function formatTransition(attrs) {
+    if( attrs.interval ) {
+      attrs.interval = parseInt(attrs.interval, 10);
+    } else if( attrs.count ) {
+      attrs.count = parseInt(attrs.count, 10);
+    } else if( attrs.until ) {
       var dtstart = moment(data.dtstart);
-      val = moment(val).hours(dtstart.hours()).minutes(dtstart.minutes()).format(Event_Calendar.Cfg.MOMENT_DATE_TIME_FORMAT);
-      val = Event_Calendar.Helpers.convertDateTimeStrToUTC(val);
+      attrs.until = moment(attrs.until).hours(dtstart.hours()).minutes(dtstart.minutes()).format(cfg.MOMENT_DATE_TIME_FORMAT);
+      attrs.until = Event_Calendar.Helpers.convertDateTimeStrToUTC(attrs.until);
     }
-    return val;
+    return attrs;
   }
 
   /**
@@ -124,41 +119,47 @@ Event_Calendar.Model = (function(){
     /**
      * Set Data
      */
-    setProperty : function setProperty(prop, val) {
-      //if(true) return publish("property_set_error", new Event_Calendar.Errors.InvalidError("Test " + prop + " error", prop));
-      var err;
-      if(Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW.indexOf(prop) === -1) {
-        err = new Event_Calendar.Errors.UnknownPropertyError("Unknown property", prop);
-        return publish("property_set_error", err);
+     
+    setProperty : function setProperty(key, val) {
+      var attr, attrs, prev, previousAttributes, curr, currentAttributes, changes, ret;
+      if (key === null) return this;
+      // Allow both (key, value) and {key: value} arguments
+      if (typeof key === 'object') {
+        attrs = key;
+      } else {
+        (attrs = {})[key] = val;
       }
-      // If setting to "", null etc. remove instead
-      if(!val) {
-        return this.removeProperty(prop);
+      attrs = formatTransition(attrs);
+      changes = [];
+      prev = this.getEvent();
+      curr = this.getEvent();
+      for(attr in attrs) {
+        val = attrs[attr];
+        if (!_.isEqual(prev[attr], val)) {
+          changes.push(attr);
+          if( (cfg.REPEAT_PROPERTIES.index(attr) > -1) && !val) {
+            delete curr[attr];
+          } else {
+            curr[attr] = val;
+          }
+        }
       }
-      // Format/Validate individual property
-      val = formatTransition(prop, val);
-      if(!v.validateProperty(prop, val)) {
-        err = new Event_Calendar.Errors.InvalidError("Invalid " + prop, prop);
-        return publish("property_set_error", err);
+      ret = v.validateEvent(curr);
+      if(ret instanceof Error) {
+        return publish("property_set_error", ret);
       }
-      // Validate event as a whole so errors involving multiple properties are caught.
-      var e = this.getEvent();
-      e[prop] = val;
-      var validationErrors = v.validateEvent(e);
-      if(validationErrors.length > 0) {
-        err = new Event_Calendar.Errors.ErrorGroup("", validationErrors);
-        return publish("property_set_error", err);
-      }
-      // Success!
-      data[prop] = val;
-      return publish("property_set", {prop: prop, val: val});
+      //return publish("property_set", {prop: key, val: val});
+      changes.forEach(function(attr){
+        container.trigger("change:" + attr, curr[attr]);
+      });
+      return this;
     },
 
     setEvent : function setEvent(evt) {
       if(!evt) return;
       evt = _.pick(evt, _.identity); // Only allow properties that have a truthy value
       var temp = _.extend({}, data, evt);
-      if(!temp.freq) temp = _.omit(temp, Event_Calendar.Cfg.REPEAT_PROPERTIES);
+      if(!temp.freq) temp = _.omit(temp, cfg.REPEAT_PROPERTIES);
       Object.keys(temp).forEach(function(key){temp[key] = formatTransition(key, temp[key]);});
       var validationErrors = v.validateEvent(temp);
       if(validationErrors.length > 0) {
@@ -171,7 +172,7 @@ Event_Calendar.Model = (function(){
     },
 
     setRepeatProperties : function setRepeatProperties(props) {
-      var temp = _.extend({}, _.omit(data, Event_Calendar.Cfg.REPEAT_PROPERTIES), props);
+      var temp = _.extend({}, _.omit(data, cfg.REPEAT_PROPERTIES), props);
       Object.keys(temp).forEach(function(key){temp[key] = formatTransition(key, temp[key]);});
       var validationErrors = v.validateEvent(temp);
       if(validationErrors.length > 0) {
@@ -194,7 +195,7 @@ Event_Calendar.Model = (function(){
           delete data[p];
           // Can't have an RRule w/o a freq
           if(p == "freq") {
-            data = _.omit(data, Event_Calendar.Cfg.REPEAT_PROPERTIES);
+            data = _.omit(data, cfg.REPEAT_PROPERTIES);
           }
         }
       });

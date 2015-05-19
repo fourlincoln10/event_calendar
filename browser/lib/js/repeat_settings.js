@@ -44,12 +44,12 @@ Event_Calendar.Repeat_Settings = (function(){
   function Repeat_Settings(containerSelector, md) {
     container = $(containerSelector);
     if(container.length === 0) {
-      throw new Error("Basic_Inputs(): Unable to locate container");
+      throw new Error("Repeat_Settings(): Unable to locate container");
     }
     cfg = Event_Calendar.Cfg;
     model = md;
     validator = Event_Calendar.Validate;
-    errorHandler = new Event_Calendar.ErrorHandler(container);
+    errorHandler = Event_Calendar.ErrorHandler;
   }
 
 
@@ -111,12 +111,14 @@ Event_Calendar.Repeat_Settings = (function(){
   // -----------------------------------------------
 
   function validate() {
-    errorHandler.removeAll();
+    errorHandler.removeRepeatPropertyErrors();
     var validationErrors = validator.validateRRule(getValues());
     if(validationErrors.length > 0) {
       var err = new Event_Calendar.Errors.ErrorGroup("", validationErrors);
       errorHandler.render(err);
+      return false;
     }
+    return true;
   }
 
 
@@ -194,14 +196,18 @@ Event_Calendar.Repeat_Settings = (function(){
   }
 
   function save(evt) {
-    console.log("REPEAT SETTINGS: ", getValues());
-    console.log("MODEL: ", model.getEvent());
-    if($(".error", container).length === 0) {
-      // var ret = model.setRepeatProperties(getValues());
+    if(errorHandler.errorsPresent()) {
+      return console.error("Please correct errors before saving.");
+    }
+    var ret = model.setRepeatProperties(getValues());
+    if(ret instanceof Error) {
+      errorHandler.render(ret);
     }
     else {
-      console.error("Please correct errors before saving.");
+      toggleModal();
     }
+    //console.log("REPEAT SETTINGS: ", getValues());
+    console.log("MODEL: ", model.getEvent());
   }
 
 
@@ -384,8 +390,8 @@ Event_Calendar.Repeat_Settings = (function(){
 
   function setInterval(interval) {
     intervalInput.val(interval);
-    var freq = getFreq();
     var timeUnit = "";
+    var freq = getFreq();
     if(freq == "daily") {
       timeUnit = " " + cfg.DAILY_INTERVAL_TIME_UNIT;
     } else if(freq == "weekly") {
