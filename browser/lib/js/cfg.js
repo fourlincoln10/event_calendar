@@ -39,6 +39,7 @@ Event_Calendar.Cfg = {
   SUMMARY_ERR_MSG             : "Must be 64-characters or less",
   DESCRIPTION_ERROR           : "Must be 256-characters or less",
   FREQ_ERR_MSG                : "Invalid frequency",
+  FREQ_REQUIRED_ERR_MSG       : "Required",
   INTERVAL_REQUIRED_ERR_MSG   : "Required",
   INTERVAL_ERR_MSG            : "Must be an integer >= 1",
   INVALID_DATE_ERR_MSG        : "Invalid date",

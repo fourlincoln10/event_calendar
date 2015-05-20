@@ -151,15 +151,18 @@ Event_Calendar.Validate = {
    */
   validateRRule : function validateRRule(r) {
     var errors = [], ctx = this;
+    if( !("freq" in r) ) {
+      errors.push(new Event_Calendar.Errors.RequiredError(Event_Calendar.Cfg.FREQ_REQUIRED_ERR_MSG, "freq"));
+    }
+    if( !("interval" in r) ) {
+      errors.push(new Event_Calendar.Errors.RequiredError(Event_Calendar.Cfg.INTERVAL_REQUIRED_ERR_MSG, "interval"));
+    }
     Object.keys(r).forEach(function(prop) {
       var ret = ctx.validateProperty(prop, r[prop]);
       if(ret instanceof Error) {
         errors.push(ret);
       }
     });
-    if(!r.freq) {
-      errors.push(new Event_Calendar.Errors.RequiredError(Event_Calendar.Cfg.FREQ_ERR_MSG, "freq"));
-    }
     if(r.count && r.until) {
       errors.push(new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.COUNT_AND_UNTIL_ERR_MSG, "count"));
     }
@@ -193,7 +196,8 @@ Event_Calendar.Validate = {
     if(e.dtstart && e.until && (+new Date(e.dtstart) >= +new Date(e.until)) ) {
       errors.push(new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.END_BEFORE_START_ERR_MSG, "until"));
     }
-    return errors;
+    var err = new Event_Calendar.Errors.ErrorGroup("", errors);
+    return err;
   }
 
 };

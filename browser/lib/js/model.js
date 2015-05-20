@@ -123,8 +123,8 @@ Event_Calendar.Model = (function(){
     setProperty : function setProperty(key, val) {
       var attr, attrs, prev, previousAttributes, curr, currentAttributes, changes, ret;
       if (key === null) return this;
-      // Allow both (key, value) and {key: value} arguments
-      if (typeof key === 'object') {
+      // Allow both (key, value) and ({key: value}) arguments
+      if (typeof key === "object") {
         attrs = key;
       } else {
         (attrs = {})[key] = val;
@@ -135,7 +135,7 @@ Event_Calendar.Model = (function(){
       curr = this.getEvent();
       for(attr in attrs) {
         val = attrs[attr];
-        if (!_.isEqual(prev[attr], val)) {
+        if ( !_.isEqual(prev[attr], val) ) {
           changes.push(attr);
           if( (cfg.REPEAT_PROPERTIES.index(attr) > -1) && !val) {
             delete curr[attr];

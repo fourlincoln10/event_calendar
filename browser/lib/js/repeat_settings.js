@@ -385,10 +385,11 @@ Event_Calendar.Repeat_Settings = (function(){
   }
 
   function setFreq(freq) {
-    freqInput.val(freq);
+    freqInput.val(freq || "");
   }
 
   function setInterval(interval) {
+    interval = interval || 1;
     intervalInput.val(interval);
     var timeUnit = "";
     var freq = getFreq();
