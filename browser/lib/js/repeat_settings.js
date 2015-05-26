@@ -17,7 +17,6 @@ Event_Calendar.Repeat_Settings = (function(){
       endNeverRadio,
       endTypeGroup,
       endUntilRadio,
-      errorHandler,
       freqInput,
       intervalInput,
       intervalTimeUnit,
@@ -28,12 +27,13 @@ Event_Calendar.Repeat_Settings = (function(){
       monthdayWeekdayDropdown,
       okBtn,
       pb,
+      rootContainer,
+      savedState,
       untilInput,
-      validator,
       variableContentContainer,
       yearDayDropDown,
       yearDayOccurrenceNumberDropDown,
-      yearWeekdayOccurrenceActiveRb;
+      yearWeekdayOccurrenceActiveCb;
 
   // -----------------------------------------------
   // 
@@ -41,15 +41,11 @@ Event_Calendar.Repeat_Settings = (function(){
   //  
   // -----------------------------------------------
 
-  function Repeat_Settings(containerSelector, md) {
-    container = $(containerSelector);
-    if(container.length === 0) {
-      throw new Error("Repeat_Settings(): Unable to locate container");
-    }
+  function Repeat_Settings(cnt, rootCnt, md) {
+    container = cnt;
     cfg = Event_Calendar.Cfg;
     model = md;
-    validator = Event_Calendar.Validate;
-    errorHandler = Event_Calendar.ErrorHandler;
+    rootContainer = rootCnt;
   }
 
 
@@ -82,7 +78,7 @@ Event_Calendar.Repeat_Settings = (function(){
         format: cfg.KENDO_DATE_DISPLAY_FORMAT,
         min: new Date("01/01/1970"), 
         enabled: false,
-        change: validate
+        change: simpleChange
       });
     }
   }
@@ -96,31 +92,15 @@ Event_Calendar.Repeat_Settings = (function(){
     debouncedResize = _.debounce(addAppropriateModalClass, 500);
     $(window).on("resize", debouncedResize);
     closeBtn.off().on("click", toggleModal);
-    cancelBtn.off().on("click", toggleModal);
+    cancelBtn.off().on("click", cancelChanges);
     okBtn.off().on("click", save);
     endTypeGroup.off().on("change", endTypeChange);
     freqInput.off().on("change", freqChange);
-    intervalInput.off().on("change", validate);
-    countInput.off().on("change", validate);
+    intervalInput.off().on("change", simpleChange);
+    countInput.off().on("change", simpleChange);
+    rootContainer.on("model.change", modelChange);
+    rootContainer.on("repeatEnabledToggled", repeatEnabledToggled);
   }
-
-  // -----------------------------------------------
-  // 
-  //  Validate
-  //  
-  // -----------------------------------------------
-
-  function validate() {
-    errorHandler.removeRepeatPropertyErrors();
-    var validationErrors = validator.validateRRule(getValues());
-    if(validationErrors.length > 0) {
-      var err = new Event_Calendar.Errors.ErrorGroup("", validationErrors);
-      errorHandler.render(err);
-      return false;
-    }
-    return true;
-  }
-
 
   // -----------------------------------------------
   // 
@@ -128,6 +108,12 @@ Event_Calendar.Repeat_Settings = (function(){
   //  
   // -----------------------------------------------
   
+  function modelChange(evt, prop, val) {
+    if(prop == "rrule") {
+      setValues(val);
+    }
+  }
+
   function toggleRepeatSettings(evt) {
     toggleModal(evt);
   }
@@ -135,12 +121,10 @@ Event_Calendar.Repeat_Settings = (function(){
   function freqChange(evt) {
     var values = {
       freq : getFreq(),
-      interval : 1,
-      dtstart : model.getProperty("dtstart")
+      interval : 1
     };
     values = _.extend(values, getEndTypeValue());
-    setValues(values);
-    validate();
+    updateModel(values);
   }
 
   function endTypeChange(evt) {
@@ -164,18 +148,24 @@ Event_Calendar.Repeat_Settings = (function(){
       disableUntil();
       countInput.prop("disabled", false);
       setCount(numOcc);
+      updateModel();
     }
     else if(endUntilRadio.is(":checked")) {
       countInput.prop("disabled", true);
       enableUntil();
-      until = moment(model.getProperty("dtstart")).format(cfg.MOMENT_DATE_FORMAT);
-      setUntil(until);     
+      until = moment(model.getProperty("dtstart")).add(numOcc, unitOfTime).format(cfg.MOMENT_DATE_FORMAT);
+      setUntil(until);
+      updateModel();   
     }
     else {
       countInput.prop("disabled", true);
       disableUntil();
+      model.removeProperty(["count", "until"]);
     }
-    validate();
+  }
+
+  function simpleChange(evt) {
+    updateModel();
   }
 
   function monthlyInputTypeChange(evt) {
@@ -183,29 +173,31 @@ Event_Calendar.Repeat_Settings = (function(){
       resetSelectMenu(monthDayOccurrenceNumberDropDown);
       resetSelectMenu(monthdayWeekdayDropdown);
       disableMonthlyOccurrenceMenus();
-      pb.set([parseInt(moment(model.getProperty("dtstart")).format("D"))]);
+      var bymonthday = [parseInt(moment(model.getProperty("dtstart")).format("D"))];
       pb.enable();
-      validate();
+      updateModel();
     }
     else {
-      pb.set([]);
+      //pb.set([]);
       enableMonthlyOccurrenceMenus();
       pb.disable();
-      validate();
+      updateModel();
     }
   }
 
+  function variableDataChange(evt) {
+    updateModel();
+  }
+
+  function updateModel(values) {
+    model.set(values || getValues());
+    console.log("After model update: ", model.getEvent());
+  }
+
   function save(evt) {
-    if(errorHandler.errorsPresent()) {
-      return console.error("Please correct errors before saving.");
-    }
-    var ret = model.setRepeatProperties(getValues());
-    if(ret instanceof Error) {
-      errorHandler.render(ret);
-    }
-    else {
-      toggleModal();
-    }
+    updateModel();
+    savedState = model.getEvent();
+    // toggleModal()
     //console.log("REPEAT SETTINGS: ", getValues());
     console.log("MODEL: ", model.getEvent());
   }
@@ -282,7 +274,7 @@ Event_Calendar.Repeat_Settings = (function(){
     if(bymonth.length > 0 && (bymonth.length > 1 || bymonth[0] != dtstartmon)) {
       ret.bymonth = bymonth;
     }
-    if(yearWeekdayOccurrenceActiveRb.is(":checked")) {
+    if(yearWeekdayOccurrenceActiveCb.is(":checked")) {
       ret = _.extend(ret, getDayOccurrenceValue());
     }
     return ret;
@@ -366,7 +358,7 @@ Event_Calendar.Repeat_Settings = (function(){
   }
 
   function setVariableValues(values) {
-    if(values.freq == "daily") {
+    if(!values.freq || values.freq == "daily") {
       renderVariableContent("daily");
     } else if(values.freq == "weekly") {
       renderVariableContent(values.freq);
@@ -471,17 +463,18 @@ Event_Calendar.Repeat_Settings = (function(){
         yearDayDropDown.val("day");
       }
       yearDayOccurrenceNumberDropDown.val(values.bysetpos);
+      enableYearlyOccurrenceMenus();
     }
     // An instance of a single-day occurrence e.g. "1su" (first sunday)
     else if(values.byday) {
       var match = values.byday.match(cfg.DAY_OCCURRENCE_REGEX); // "1su" means year day occurrence
       yearDayOccurrenceNumberDropDown.val(match[1]);
       yearDayDropDown.val(match[2]);
+      enableYearlyOccurrenceMenus();
     }
     // Month(s) chosen only...reset occurrence menus
     else {
-      resetSelectMenu(yearDayOccurrenceNumberDropDown);
-      resetSelectMenu(yearDayDropDown);
+      disableYearlyOccurrenceMenus();
     }
   }
 
@@ -546,7 +539,7 @@ Event_Calendar.Repeat_Settings = (function(){
       buttonHeight: 25,
       data: [{text: "SU", value: "su"},{text: "MO", value: "mo"},{text: "TU", value: "tu"},{text: "WE", value: "we"},{text: "TH", value: "th"},{text: "FR", value: "fr"},{text: "SA", value: "sa"}]
     });
-    variableContentContainer.off().on("pushButtonSelected pushButtonDeselected", validate);
+    variableContentContainer.off().on("pushButtonSelected pushButtonDeselected", variableDataChange);
   }
 
   function renderMonthlyFreq() {
@@ -576,21 +569,22 @@ Event_Calendar.Repeat_Settings = (function(){
         {text: 31, value: 31}
       ]
     });
-    $(".monthday-occurrence-number, .monthday-weekday-dropdown").off().on("change", validate);
-    variableContentContainer.off().on("pushButtonSelected pushButtonDeselected", validate);
+    $(".monthday-occurrence-number, .monthday-weekday-dropdown").off().on("change", variableDataChange);
+    variableContentContainer.off().on("pushButtonSelected pushButtonDeselected", variableDataChange);
   }
 
   function renderYearlyFreq() {
     variableContentContainer.html(Event_Calendar.Templates.yearly_inputs);
     yearDayDropDown = $(".yearday-drop-down", container);
     yearDayOccurrenceNumberDropDown = $(".yearday-occurrence-number", container);
-    yearWeekdayOccurrenceActiveRb = $(".year-day-occurrence-active", container);
-    yearWeekdayOccurrenceActiveRb.on("change", function(){
-      if(yearWeekdayOccurrenceActiveRb.is(":checked")) {
-        $(".yearday-occurrence-number, .yearday-drop-down").prop("disabled", false);
+    yearWeekdayOccurrenceActiveCb = $(".year-day-occurrence-active", container);
+    yearWeekdayOccurrenceActiveCb.on("change", function(){
+      if(yearWeekdayOccurrenceActiveCb.is(":checked")) {
+        enableYearlyOccurrenceMenus();
       } else {
-        $(".yearday-occurrence-number, .yearday-drop-down").prop("disabled", true);
+        disableYearlyOccurrenceMenus();
       }
+      updateModel();
     });
     pb = new Event_Calendar.PushButtons(".pushbutton-container");
     pb.render({
@@ -604,8 +598,8 @@ Event_Calendar.Repeat_Settings = (function(){
         {text: "Oct", value: 10},{text: "Nov", value: 11},{text: "Dec", value: 12}
       ]
     });
-    $(".yearday-occurrence-number, .yearday-drop-down").off().on("change", validate);
-    variableContentContainer.off().on("pushButtonSelected pushButtonDeselected", validate);
+    $(".yearday-occurrence-number, .yearday-drop-down").off().on("change", variableDataChange);
+    variableContentContainer.off().on("pushButtonSelected pushButtonDeselected", variableDataChange);
   }
 
   function renderVariableContent (freq, monthlyDayOfWeek) {
@@ -657,6 +651,19 @@ Event_Calendar.Repeat_Settings = (function(){
     monthdayWeekdayDropdown.prop("disabled", false);
   }
 
+  function disableYearlyOccurrenceMenus() {
+    resetSelectMenu(yearDayOccurrenceNumberDropDown);
+    resetSelectMenu(yearDayDropDown);
+    yearDayOccurrenceNumberDropDown.prop("disabled", true);
+    yearDayDropDown.prop("disabled", true);
+  }
+
+  function enableYearlyOccurrenceMenus() {
+    yearWeekdayOccurrenceActiveCb.prop("checked", true);
+    yearDayOccurrenceNumberDropDown.prop("disabled", false);
+    yearDayDropDown.prop("disabled", false);
+  }
+
   // -----------------------------------------------
   // 
   //  Modal stuff
@@ -679,10 +686,30 @@ Event_Calendar.Repeat_Settings = (function(){
     showClass = cfg.SHOW_MODAL_CLASS;
     if(modal.hasClass( showClass ) ) {
       modal.removeClass( showClass );
+      var rsPresent = Object.keys(model.getRepeatProperties()).length > 0;
+      rootContainer.trigger("repeatSettingsModalClosed", [rsPresent]);
     }
     else {
       modal.addClass( showClass );
+      setValues(model.getEvent());
     }
+  }
+
+  function repeatEnabledToggled(evt) {
+    if($(evt.target).is(":checked")) {
+      toggleModal();
+    } else {
+      model.removeRepeatProperties();
+    }
+  }
+
+  function cancelChanges(evt) {
+    if(savedState) {
+      updateModel(savedState);
+    } else {
+      model.removeRepeatProperties();
+    }
+    toggleModal();
   }
 
   

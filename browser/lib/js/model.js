@@ -19,14 +19,14 @@ Event_Calendar.Model = (function(){
    * Model Constructor
    * @param {Object} evt An object containing event properties
    */
-  function Model(values, cont, ctrl) {
+  function Model(cont, ctrl, values) {
     cfg = Event_Calendar.Cfg;
     container = cont;
     controller = ctrl;
     data = {};
     savedState = null;
     values = values || defaultValues();
-    this.setEvent(values);
+    this.set(values);
   }
 
   function publish(evtType, data) {
@@ -67,14 +67,8 @@ Event_Calendar.Model = (function(){
     return _.extend(d, old);
   }
 
-  function roundDateToNearestHalfHour(dt) {
-    var coeff = 1000 * 60 * 30; // 1000 ms/sec * 60 sec/min * 30 min/1 = 1800000 ms.
-    var roundedMs = Math.ceil(dt.getTime() / coeff) * coeff; // Round up to nearest 30 mins and convert to ms
-    return new Date(roundedMs);
-  }
-
   function defaultValues() {
-    var dtstart = moment(roundDateToNearestHalfHour(new Date())).format(cfg.MOMENT_DATE_TIME_FORMAT);
+    var dtstart = moment(Event_Calendar.Helpers.roundDateToNearestHalfHour(new Date())).format(cfg.MOMENT_DATE_TIME_FORMAT);
     var dtend = moment(dtstart).add(1, "hour").format(cfg.MOMENT_DATE_TIME_FORMAT);
     return {
       dtstart: dtstart,
@@ -86,9 +80,11 @@ Event_Calendar.Model = (function(){
   function formatTransition(attrs) {
     if( attrs.interval ) {
       attrs.interval = parseInt(attrs.interval, 10);
-    } else if( attrs.count ) {
+    }
+    if( attrs.count ) {
       attrs.count = parseInt(attrs.count, 10);
-    } else if( attrs.until ) {
+    }
+    if( attrs.until ) {
       var dtstart = moment(data.dtstart);
       attrs.until = moment(attrs.until).hours(dtstart.hours()).minutes(dtstart.minutes()).format(cfg.MOMENT_DATE_TIME_FORMAT);
       attrs.until = Event_Calendar.Helpers.convertDateTimeStrToUTC(attrs.until);
@@ -100,6 +96,19 @@ Event_Calendar.Model = (function(){
    * API
    */
   Model.prototype = {
+
+    toggleAllDay : function toggleAllDay(isAllDay) {
+      var dtstart, dtend, roundedNow;
+      if(isAllDay) {
+        dtstart = moment(this.getProperty("dtstart")).format(cfg.MOMENT_DATE_FORMAT);
+        dtend = moment(this.getProperty("dtend")).format(cfg.MOMENT_DATE_FORMAT);
+      } else {
+        roundedNow = moment(Event_Calendar.Helpers.roundDateToNearestHalfHour(new Date()));
+        dtstart = moment(this.getProperty("dtstart")).hour(roundedNow.hour()).minute(roundedNow.minute()).format(cfg.MOMENT_DATE_TIME_FORMAT);
+        dtend = moment(this.getProperty("dtend")).hour(roundedNow.hour()).minute(roundedNow.minute()).format(cfg.MOMENT_DATE_TIME_FORMAT);
+      }
+      this.set({dtstart: dtstart, dtend: dtend});
+    },
     
     /**
      * Get data
@@ -116,13 +125,18 @@ Event_Calendar.Model = (function(){
       return _.extend({}, data);
     },
 
+    getRepeatProperties : function getRepeatProperties() {
+      return _.pick(data, Event_Calendar.Cfg.REPEAT_PROPERTIES);
+    },
+
     /**
      * Set Data
      */
      
-    setProperty : function setProperty(key, val) {
+    set : function set(key, val) {
       var attr, attrs, prev, previousAttributes, curr, currentAttributes, changes, ret;
       if (key === null) return this;
+      container.trigger("model.set", [key, val]); // Enables error removal from DOM
       // Allow both (key, value) and ({key: value}) arguments
       if (typeof key === "object") {
         attrs = key;
@@ -130,6 +144,9 @@ Event_Calendar.Model = (function(){
         (attrs = {})[key] = val;
       }
       attrs = formatTransition(attrs);
+      if(_.intersection(Event_Calendar.Cfg.REPEAT_PROPERTIES, Object.keys(attrs)).length > 0) {
+        return this.setRepeatProperties(attrs);
+      }
       changes = [];
       prev = this.getEvent();
       curr = this.getEvent();
@@ -137,21 +154,22 @@ Event_Calendar.Model = (function(){
         val = attrs[attr];
         if ( !_.isEqual(prev[attr], val) ) {
           changes.push(attr);
-          if( (cfg.REPEAT_PROPERTIES.index(attr) > -1) && !val) {
-            delete curr[attr];
-          } else {
-            curr[attr] = val;
-          }
+          curr[attr] = val;
         }
       }
       ret = v.validateEvent(curr);
       if(ret instanceof Error) {
-        return publish("property_set_error", ret);
+        container.trigger("model.error", ret);
+      } else {
+        data = curr;
+        changes.forEach(function(attr) {
+          if( (cfg.REPEAT_PROPERTIES.indexOf(attr) > -1) ) {
+            container.trigger("model.change", [attr, this.getRepeatProperties()]);
+          } else {
+            container.trigger("model.change", [attr, curr[attr]]);
+          }
+        });
       }
-      //return publish("property_set", {prop: key, val: val});
-      changes.forEach(function(attr){
-        container.trigger("change:" + attr, curr[attr]);
-      });
       return this;
     },
 
@@ -173,16 +191,15 @@ Event_Calendar.Model = (function(){
 
     setRepeatProperties : function setRepeatProperties(props) {
       var temp = _.extend({}, _.omit(data, cfg.REPEAT_PROPERTIES), props);
-      Object.keys(temp).forEach(function(key){temp[key] = formatTransition(key, temp[key]);});
-      var validationErrors = v.validateEvent(temp);
-      if(validationErrors.length > 0) {
-        var err = new Event_Calendar.Errors.ErrorGroup(null, validationErrors);
-        return publish("repeat_properties_set_error", err);
-      } 
-      // Success!
+      temp = formatTransition(temp);
+      var ret = v.validateEvent(temp);
+      if(ret instanceof Error) {
+        container.trigger("model.error", ret);
+        return this;
+      }
       data = temp;
-      if(!savedState) savedState = _.extend({}, data);
-      return publish("repeat_properties_set", _.pick(temp, Object.keys(props)));
+      container.trigger("model.change", ["rrule", this.getRepeatProperties()]);
+      return this;
     },
 
     /**
@@ -199,7 +216,8 @@ Event_Calendar.Model = (function(){
           }
         }
       });
-      return publish("property_removed", prop);
+      container.trigger("model.removed", prop);
+      return this;
     },
 
     removeRepeatProperties : function removeRepeatProperties() {

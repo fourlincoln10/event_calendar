@@ -10,7 +10,7 @@
     <label>Start/End</label>
     <span class="dtstart-group">
       <span class="dtstart-prefix prefix">From</span>
-      <input type="date" title="From Date" class="dtstart-date" /> 
+      <input type="date" title="From Date" class="dtstart-date" min="1970-01-01"/> 
       <span class="dtstart-separator separator">at</span>
       <input type="time" title="From Time" class="dtstart-time" />
     </span>
@@ -18,7 +18,7 @@
       <span class="dtend-prefix prefix">To</span>
       <input type="date" title="To Date" class="dtend-date" /> 
       <span class="dtend-separator separator">at</span>
-      <input type="time" title="To Time" class="dtend-time" />
+      <input type="time" title="To Time" class="dtend-time" min="1970-01-01"/>
     </span>
   </div>
   <div class="allday-row row">
@@ -26,8 +26,8 @@
   </div>
   <div class="repeat-row row">
     <label>Repeat 
-      <input type="checkbox" title="Repeat" class="repeat" /> 
-      <span class="repeat-msg"></span> 
+      <input type="checkbox" title="Repeat" class="repeatEnabled" /> 
+      <span class="editRepeatSettings"></span> 
     </label>
   </div>
   <div class="location-row row">

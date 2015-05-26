@@ -34,7 +34,7 @@ Event_Calendar.Validate = {
     } else if (prop == "description") {
       return this.validateDescription(val);
     } 
-    return false;
+    return new Event_Calendar.Errors.UnknownPropertyError("", prop);
   },
 
   validateIsoDateString : function validateIsoDateString(d) {
@@ -47,7 +47,7 @@ Event_Calendar.Validate = {
     if(!this.validateIsoDateString(dtstart)) {
       return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.INVALID_DATE_ERR_MSG, "dtstart");
     }
-    if(+new Date(dtstart) > +new Date("01/01/1970")) {
+    if(+new Date(dtstart) < +new Date("01/01/1970")) {
       return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.DTSTART_TOO_OLD_ERR_MSG, "dtstart");
     }
     return true;
@@ -61,30 +61,27 @@ Event_Calendar.Validate = {
   },
 
   validateSummary : function validateSummary(sum) {
-    if(sum && sum.length > 64) {
+    if(sum.length > 64) {
       return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.SUMMARY_ERROR, "summary");
     }
     return true;
   },
 
   validateDescription : function validateDescription(desc) {
-    if(desc && desc.length > 256) {
+    if(desc.length > 256) {
       return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.DESCRIPTION_ERROR, "description");
     }
     return true;
   },
 
   validateFreq : function validateFreq(freq) {
-    if(freq && Event_Calendar.Cfg.FREQ_VALUES.indexOf(freq) > -1) {
+    if(Event_Calendar.Cfg.FREQ_VALUES.indexOf(freq) === -1) {
       return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.FREQ_ERR_MSG, "freq");
     }
     return true;
   },
 
   validateInterval : function validateInterval(interval) {
-    if(!interval) {
-      return new Event_Calendar.Errors.RequiredError(Event_Calendar.Cfg.INTERVAL_REQUIRED_ERR_MSG, "interval");
-    }
     if(!Event_Calendar.Helpers.isInteger(interval) || interval < 1) {
       return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.INTERVAL_ERR_MSG, "interval");
     }
@@ -92,21 +89,20 @@ Event_Calendar.Validate = {
   },
 
   validateCount : function validateCount(count) {
-    if(count && (!Event_Calendar.Helpers.isInteger(count) || count < 1)) {
+    if((!Event_Calendar.Helpers.isInteger(count) || count < 1)) {
       return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.COUNT_ERR_MSG, "count");
     }
     return true;
   },
 
   validateUntil : function validateUntil(until) {
-    if(until && !this.validateIsoDateString(until)) {
+    if(!this.validateIsoDateString(until)) {
       return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.INVALID_DATE_ERR_MSG, "until");
     }
     return true;
   },
 
   validateByday : function validateByday(byday) {
-    if(!byady) return true;
     function validate(day) {
       return day.search(Event_Calendar.Cfg.BYDAY_REGEX) > -1;
     }
@@ -176,12 +172,12 @@ Event_Calendar.Validate = {
     var ctx = this;
     var errors = [];
     var rrule = _.pick(e, Event_Calendar.Cfg.REPEAT_PROPERTIES);
-    var everythingElse =  _.pick(e, _.difference(Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW, Event_Calendar.Cfg.REPEAT_PROPERTIES));
+    var everythingElse =  _.omit(e, Event_Calendar.Cfg.REPEAT_PROPERTIES);
     // Required Fields
-    if(!everythingElse.dtstart) {
+    if( !("dtstart" in everythingElse) ) {
       errors.push(new Event_Calendar.Errors.RequiredError(Event_Calendar.Cfg.DTSTART_REQUIRED_ERR_MSG, "dtstart"));
     }
-    if(!everythingElse.dtend) {
+    if( !("dtend" in everythingElse) ) {
       errors.push(new Event_Calendar.Errors.RequiredError(Event_Calendar.Cfg.DTEND_REQUIRED_ERR_MSG, "dtend"));
     }
     // Validate individual properties
@@ -193,11 +189,13 @@ Event_Calendar.Validate = {
       }
     });
     // Multi-field validation
+    if(e.dtstart && e.dtend && moment(e.dtend).isBefore(moment(e.dtstart))) {
+      errors.push(new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.END_BEFORE_START_ERR_MSG, "dtend"));
+    }
     if(e.dtstart && e.until && (+new Date(e.dtstart) >= +new Date(e.until)) ) {
       errors.push(new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.END_BEFORE_START_ERR_MSG, "until"));
     }
-    var err = new Event_Calendar.Errors.ErrorGroup("", errors);
-    return err;
+    return errors.length > 0 ? new Event_Calendar.Errors.ErrorGroup("", errors) : true;
   }
 
 };

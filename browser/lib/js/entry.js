@@ -7,7 +7,9 @@ Event_Calendar.Entry = (function(){
   var model,
       container,
       bi,         // basic inputs
-      rs,         // repeat setting inputs,
+      biCnt,      // basic inputs container
+      rs,         // repeat setting inputs
+      rsCnt,      // repeat settings container
       eh;         // error handler
 
   /**
@@ -19,23 +21,20 @@ Event_Calendar.Entry = (function(){
     if(container.length === 0) {
       throw new Error("Entry(): Unable to locate container");
     }
-    model = new Event_Calendar.Model(values, this);
-    Event_Calendar.ErrorHandler.container = container;
     container.html(Event_Calendar.Templates.entry_container);
-    bi = new Event_Calendar.Basic_Inputs(".basic-inputs-container", this, model);
-    bi.render(values);
-    rs = new Event_Calendar.Repeat_Settings(".repeat-settings-container", model);
+    biCnt = $(".basic-inputs-container");
+    rsCnt = $(".repeat-settings-container");
+    eh = new Event_Calendar.ErrorHandler(biCnt, rsCnt, container);
+    model = new Event_Calendar.Model(container, this, values);
+    bi = new Event_Calendar.Basic_Inputs(biCnt, this, model, container);
+    bi.render(model.getEvent());
+    rs = new Event_Calendar.Repeat_Settings(rsCnt, container, model);
     rs.render();
-    initEvents();
   }
 
   /**
    * Private Functions
    */
-  function initEvents() {
-    // Set up the events we are going to listen to
-    container.off();
-  }
   
 
   /**

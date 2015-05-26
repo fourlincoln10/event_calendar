@@ -30,6 +30,10 @@ $window-close-btn-color: #454545;
 
   .error {
     color: $error-color;
+    
+    &:before {
+      content : "\26A0 ";
+    }
   }
 
   .row {
