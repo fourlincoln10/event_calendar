@@ -9,4 +9,3 @@ On the front end it features a calendar view, a simple input form and a custom i
 The back end is a Node JS module that saves data to couchdb. I plan on supporting additional databases such as postgresql in the future.
 
 This project is in its infancy so I don't suggest using it for anything yet.
-

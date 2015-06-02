@@ -10,10 +10,12 @@ Thumbs.db
 # Directories #
 ######################
 node_modules
+fullcalendar
 kendo-ui-core
 .sass-cache/
 browser/test_site/css
 browser/test_site/js
+
 
 
 # Files #

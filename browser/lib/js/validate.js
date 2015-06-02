@@ -31,6 +31,8 @@ Event_Calendar.Validate = {
       return this.validateRRule(val);
     } else if (prop == "summary") {
       return this.validateSummary(val);
+    } else if (prop == "location") {
+      return this.validateLocation(val);
     } else if (prop == "description") {
       return this.validateDescription(val);
     } 
@@ -39,8 +41,8 @@ Event_Calendar.Validate = {
 
   validateIsoDateString : function validateIsoDateString(d) {
     return typeof d == "string" && 
-    ( (d.search(Event_Calendar.Cfg.ISO_DATE_REGEX) > -1) || (d.search(Event_Calendar.Cfg.ISO_DATETIME_REGEX) > -1) ) && 
-    moment(d).isValid();
+      ( (d.search(Event_Calendar.Cfg.ISO_DATE_REGEX) > -1) || (d.search(Event_Calendar.Cfg.ISO_DATETIME_REGEX) > -1) ) && 
+      moment(d).isValid();
   },
 
   validateDtstart : function validateDtstart(dtstart) {
@@ -63,6 +65,13 @@ Event_Calendar.Validate = {
   validateSummary : function validateSummary(sum) {
     if(sum.length > 64) {
       return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.SUMMARY_ERROR, "summary");
+    }
+    return true;
+  },
+
+  validateLocation : function validateLocation(loc) {
+    if(loc.length > 256) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.LOCATION_ERROR, "location");
     }
     return true;
   },
@@ -165,14 +174,20 @@ Event_Calendar.Validate = {
     if( r.freq && r.freq == "yearly" && Array.isArray(r.bymonth) && r.bymonth.length > 1 && Array.isArray(r.byday) && r.byday.length > 1) {
       errors.push(new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.MULT_MONTHS_AND_OCC_ERR_MSG, "bymonth"));
     }
-    return errors;
+    if(errors.length > 0) {
+      return new Event_Calendar.Errors.ErrorGroup("", errors);
+    }
+    return true;
   },
 
   validateEvent : function validateEvent(e) {
     var ctx = this;
     var errors = [];
     var rrule = _.pick(e, Event_Calendar.Cfg.REPEAT_PROPERTIES);
-    var everythingElse =  _.omit(e, Event_Calendar.Cfg.REPEAT_PROPERTIES);
+    var everythingElse = _.pick(e, _.difference(Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW, Event_Calendar.Cfg.REPEAT_PROPERTIES));
+    //var everythingElse =  _.omit(e, Event_Calendar.Cfg.REPEAT_PROPERTIES);
+    var ret;
+
     // Required Fields
     if( !("dtstart" in everythingElse) ) {
       errors.push(new Event_Calendar.Errors.RequiredError(Event_Calendar.Cfg.DTSTART_REQUIRED_ERR_MSG, "dtstart"));
@@ -180,14 +195,21 @@ Event_Calendar.Validate = {
     if( !("dtend" in everythingElse) ) {
       errors.push(new Event_Calendar.Errors.RequiredError(Event_Calendar.Cfg.DTEND_REQUIRED_ERR_MSG, "dtend"));
     }
-    // Validate individual properties
-    if(Object.keys(rrule).length > 0) { errors = errors.concat(this.validateRRule(rrule)); }
+
+    // Individual properties
+    if(Object.keys(rrule).length > 0) {
+      ret = this.validateRRule(rrule);
+      if(ret instanceof Error) {
+        errors = errors.concat(ret.errors);
+      }
+    }
     Object.keys(everythingElse).forEach(function(prop){
       var ret = ctx.validateProperty(prop, e[prop]);
       if(ret instanceof Error) {
         errors.push(ret);
       }
     });
+    
     // Multi-field validation
     if(e.dtstart && e.dtend && moment(e.dtend).isBefore(moment(e.dtstart))) {
       errors.push(new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.END_BEFORE_START_ERR_MSG, "dtend"));
@@ -195,7 +217,10 @@ Event_Calendar.Validate = {
     if(e.dtstart && e.until && (+new Date(e.dtstart) >= +new Date(e.until)) ) {
       errors.push(new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.END_BEFORE_START_ERR_MSG, "until"));
     }
-    return errors.length > 0 ? new Event_Calendar.Errors.ErrorGroup("", errors) : true;
+    if(errors.length > 0) {
+      return new Event_Calendar.Errors.ErrorGroup("", errors);
+    }
+    return true;
   }
 
 };

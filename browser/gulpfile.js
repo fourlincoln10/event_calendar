@@ -30,7 +30,7 @@ gulp.task("move-kendo-files", function(){
 gulp.task("build-css", gulp.series("sass", "move-kendo-files", function concat_css() {
   return gulp.src([
     "./lib/css/*.css",
-    "./lib/js/third_party/fullcalendar-2.2.6/fullcalendar.min.css",
+    "./lib/js/third_party/fullcalendar/dist/fullcalendar.min.css",
     "./lib/js/third_party/kendo-ui-core/dist/styles/web/kendo.common.core.css",
     "./lib/js/third_party/kendo-ui-core/dist/styles/web/kendo.default.css"
   ])
@@ -64,7 +64,7 @@ gulp.task("concat-third-party-js", function(){
   return gulp.src([
     "./lib/js/third_party/*.js",
     "!./lib/js/third_party/ical.js",
-    "./lib/js/third_party/fullcalendar-2.2.6/fullcalendar.min.js",
+    "./lib/js/third_party/fullcalendar/dist/fullcalendar.min.js",
     "./lib/js/third_party/kendo-ui-core/dist/js/kendo.ui.core.min.js"
   ])
   .pipe(concat("lib.js"))
@@ -92,7 +92,7 @@ gulp.task("concat-js", function(){
 });
 
 gulp.task("test", function () {
-  return gulp.src("./test/*.js")
+  return gulp.src(["./test/*.js", "!./test/model.js"])
     .pipe(mocha({ reporter: "list" }));
 });
 

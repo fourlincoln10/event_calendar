@@ -1,5 +1,56 @@
 
-v2.2.6 (2015-01-10)
+v2.3.1 (2015-03-08)
+-------------------
+
+- Fix week view column title for en-gb ([PR220])
+- Publish to NPM ([2447])
+- Detangle bower from npm package ([PR179])
+
+[PR220]: https://github.com/arshaw/fullcalendar/pull/220
+[2447]: https://code.google.com/p/fullcalendar/issues/detail?id=2447
+[PR179]: https://github.com/arshaw/fullcalendar/pull/179
+
+
+v2.3.0 (2015-02-21)
+-------------------
+
+- internal refactoring in preparation for other views
+- businessHours now renders on whole-days in addition to timed areas
+- events in "more" popover not sorted by time ([2385])
+- avoid using moment's deprecated zone method ([2443])
+- destroying the calendar sometimes causes all window resize handlers to be unbound ([2432])
+- multiple calendars on one page, can't accept external elements after navigating ([2433])
+- accept external events from jqui sortable ([1698])
+- external jqui drop processed before reverting ([1661])
+- IE8 fix: month view renders incorrectly ([2428])
+- IE8 fix: eventLimit:true wouldn't activate "more" link ([2330])
+- IE8 fix: dragging an event with an href
+- IE8 fix: invisible element while dragging agenda view events
+- IE8 fix: erratic external element dragging
+
+[2385]: https://code.google.com/p/fullcalendar/issues/detail?id=2385
+[2443]: https://code.google.com/p/fullcalendar/issues/detail?id=2443
+[2432]: https://code.google.com/p/fullcalendar/issues/detail?id=2432
+[2433]: https://code.google.com/p/fullcalendar/issues/detail?id=2433
+[1698]: https://code.google.com/p/fullcalendar/issues/detail?id=1698
+[1661]: https://code.google.com/p/fullcalendar/issues/detail?id=1661
+[2428]: https://code.google.com/p/fullcalendar/issues/detail?id=2428
+[2330]: https://code.google.com/p/fullcalendar/issues/detail?id=2330
+
+
+v2.2.7 (2015-02-10)
+-------------------
+
+- view.title wasn't defined in viewRender callback ([2407])
+- FullCalendar versions >= 2.2.5 brokenness with Moment versions <= 2.8.3 ([2417])
+- Support Bokmal Norwegian language specifically ([2427])
+
+[2407]: https://code.google.com/p/fullcalendar/issues/detail?id=2407
+[2417]: https://code.google.com/p/fullcalendar/issues/detail?id=2417
+[2427]: https://code.google.com/p/fullcalendar/issues/detail?id=2427
+
+
+v2.2.6 (2015-01-11)
 -------------------
 
 - Compatibility with Moment v2.9. Was breaking GCal plugin ([2408])

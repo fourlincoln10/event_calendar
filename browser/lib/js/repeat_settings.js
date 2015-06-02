@@ -91,7 +91,7 @@ Event_Calendar.Repeat_Settings = (function(){
     if(debouncedResize) { $(window).off("resize", debouncedResize); }
     debouncedResize = _.debounce(addAppropriateModalClass, 500);
     $(window).on("resize", debouncedResize);
-    closeBtn.off().on("click", toggleModal);
+    closeBtn.off().on("click", cancelChanges);
     cancelBtn.off().on("click", cancelChanges);
     okBtn.off().on("click", save);
     endTypeGroup.off().on("change", endTypeChange);
@@ -99,7 +99,9 @@ Event_Calendar.Repeat_Settings = (function(){
     intervalInput.off().on("change", simpleChange);
     countInput.off().on("change", simpleChange);
     rootContainer.on("model.change", modelChange);
-    rootContainer.on("repeatEnabledToggled", repeatEnabledToggled);
+    rootContainer.on("repeatEnabled", toggleModal);
+    rootContainer.on("repeatDisabled", removeRepeatProperties);
+    rootContainer.on("editRepeatSettings", toggleModal);
   }
 
   // -----------------------------------------------
@@ -341,6 +343,9 @@ Event_Calendar.Repeat_Settings = (function(){
   function setValues(values) {
     setPersistentValues(values);
     setVariableValues(values);
+    if(_.intersection(Object.keys(values), cfg.REPEAT_PROPERTIES).length > 0) {
+      rootContainer.trigger("repeatSettingsSet");
+    }
   }
 
   function setPersistentValues(values) {
@@ -686,20 +691,10 @@ Event_Calendar.Repeat_Settings = (function(){
     showClass = cfg.SHOW_MODAL_CLASS;
     if(modal.hasClass( showClass ) ) {
       modal.removeClass( showClass );
-      var rsPresent = Object.keys(model.getRepeatProperties()).length > 0;
-      rootContainer.trigger("repeatSettingsModalClosed", [rsPresent]);
     }
     else {
-      modal.addClass( showClass );
       setValues(model.getEvent());
-    }
-  }
-
-  function repeatEnabledToggled(evt) {
-    if($(evt.target).is(":checked")) {
-      toggleModal();
-    } else {
-      model.removeRepeatProperties();
+      modal.addClass( showClass );
     }
   }
 
@@ -707,9 +702,15 @@ Event_Calendar.Repeat_Settings = (function(){
     if(savedState) {
       updateModel(savedState);
     } else {
-      model.removeRepeatProperties();
+      removeRepeatProperties();
     }
     toggleModal();
+  }
+
+  function removeRepeatProperties() {
+    model.removeRepeatProperties();
+    savedState = null;
+    rootContainer.trigger("repeatSettingsRemoved");
   }
 
   

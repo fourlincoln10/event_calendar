@@ -163,11 +163,7 @@ Event_Calendar.Model = (function(){
       } else {
         data = curr;
         changes.forEach(function(attr) {
-          if( (cfg.REPEAT_PROPERTIES.indexOf(attr) > -1) ) {
-            container.trigger("model.change", [attr, this.getRepeatProperties()]);
-          } else {
-            container.trigger("model.change", [attr, curr[attr]]);
-          }
+          container.trigger("model.change", [attr, curr[attr]]);
         });
       }
       return this;

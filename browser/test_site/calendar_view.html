@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title></title>
+  <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
+  <link rel="stylesheet" type="text/css" href="css/screen.css">
+  <style type="text/css">
+    .calendar-container {
+      padding: 30px 50px 50px 50px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="calendar-container"></div>
+
+<script src="js/lib.js"></script>
+<script src="js/event_calendar.js"></script>
+<script>
+  $(".calendar-container").fullCalendar({
+    theme: true,
+    header: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'month,agendaWeek,agendaDay'
+    },
+    eventSources: {
+      url: "/events"
+    }
+  });
+</script>
+</body>
+</html>

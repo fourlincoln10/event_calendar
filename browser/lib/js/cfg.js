@@ -37,6 +37,7 @@ Event_Calendar.Cfg = {
   MONTHLY_INTERVAL_TIME_UNIT  : "month(s)",
   YEARLY_INTERVAL_TIME_UNIT   : "year(s)",
   SUMMARY_ERR_MSG             : "Must be 64-characters or less",
+  LOCATION_ERROR              : "Must be 256-characters or less",
   DESCRIPTION_ERROR           : "Must be 256-characters or less",
   FREQ_ERR_MSG                : "Invalid frequency",
   FREQ_REQUIRED_ERR_MSG       : "Required",

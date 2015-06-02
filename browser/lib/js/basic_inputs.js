@@ -15,6 +15,7 @@ Event_Calendar.Basic_Inputs = (function(){
       dtendTimeInput,
       dtstartDateInput,
       dtstartTimeInput,
+      editRepeatSettingsLink,
       locationInput,
       model,
       rootContainer,
@@ -80,12 +81,14 @@ Event_Calendar.Basic_Inputs = (function(){
 
   function initEvents() {
     container.off();
-    container.on("change", "input:not(.allday,.repeat,.k-input),textarea", setModelValue);
+    container.on("change", "input:not(.allday,.repeatEnabled,.k-input),textarea", setModelValue);
     container.on("change", ".allday", allDayChange);
     container.on("change", ".repeatEnabled", repeatEnabledChange);
+    container.on("click", ".editRepeatSettings", editRepeatSettingsClick);
     container.on("click", ".save-button", save);
-    rootContainer.on("model.change", modelChangeHandler);
-    rootContainer.on("repeatSettingsModalClosed", repeatSettingsModalClosed);
+    rootContainer.on("model.change", defaultModelChangeHandler);
+    rootContainer.on("repeatSettingsSet", repeatSettingsSet);
+    rootContainer.on("repeatSettingsRemoved", repeatSettingsRemoved);
   }
 
   // -----------------------------------------------
@@ -145,15 +148,32 @@ Event_Calendar.Basic_Inputs = (function(){
   }
 
   function repeatEnabledChange(evt) {
-    repeatEnabledInput.trigger("repeatEnabledToggled");
+    var evtToTrigger = $(evt.target).is(":checked") ? "repeatEnabled" : "repeatDisabled";
+    rootContainer.trigger(evtToTrigger);
   }
 
-  function modelChangeHandler(evt, prop, val) {
+  function defaultModelChangeHandler(evt, prop, val) {
     setProperty(prop, val);
   }
 
-  function repeatSettingsModalClosed(evt, repeatSettingsPresent) {
-    repeatEnabledInput.prop("checked", repeatSettingsPresent);
+  function repeatSettingsSet(evt) {
+    if(!editRepeatSettingsLink) {
+      var html = "<a href='#' class='editRepeatSettings'>Edit</a>"; // Templatize this
+      $(".repeat-row", container).append(html);
+      editRepeatSettingsLink = $(".editRepeatSettings", container);
+    }
+  }
+
+  function repeatSettingsRemoved(evt) {
+    if(editRepeatSettingsLink) {
+      editRepeatSettingsLink.remove();
+      editRepeatSettingsLink = null;
+    }
+    repeatEnabledInput.prop("checked", false);
+  }
+
+  function editRepeatSettingsClick(evt) {
+    rootContainer.trigger("editRepeatSettings");
   }
 
   // -----------------------------------------------
@@ -345,7 +365,7 @@ Event_Calendar.Basic_Inputs = (function(){
   }
 
   function save() {
-    console.log("save(): ", getValues());
+    console.log("save(): ", model.getEvent());
   }
 
   /**

@@ -1,5 +1,4 @@
-var rrule = require("rrule").RRule,
-    ICAL = require("ical.js"),
+var ICAL = require("ical.js"),
     _ = require("underscore"),
     util = require("util"),
     moment = require("moment-timezone"),
@@ -26,7 +25,7 @@ var cfg = {
   "ORIG_DTSTART_REQUIRED_MSG" : "Original datestart is required",
   "UID_REQUIRED_MSG" : "UID is required",
   "MAX_RECURRENCE_EXPANSION" : 500,
-  "DOMAIN_NAME" : "intellasset.com"
+  "DOMAIN_NAME" : "localhost.com"
 };
 
 function isEmpty(val) {
@@ -161,7 +160,8 @@ function diff(newValues, evt) {
  * The only differences that matter are:
  *   1. Different start time
  *   2. Summary
- *   3. Description
+ *   3. Location
+ *   4. Description
  */
 function exceptionEventDifferentThanMainEvent(exceptionEvt, mainEvt) {
   exceptionEvt = exceptionEvt instanceof ICAL.Component ? exceptionEvt : new ICAL.Component(exceptionEvt);
@@ -265,21 +265,30 @@ function updateTimePortionOfDateTimeOnly(a,b) {
 
 /**
  * Returns true if a date is found an a repeating events set of occurrences
- * @param  {Object}  evt     The repeating event
- * @param  {String}  occDate The date we are inquiring about
- * @return {Boolean}         True if date portion matches an occurence date. False otherwise.
+ * @param  {Object}  evt          The repeating event
+ * @param  {String}  occDate      The date we are inquiring about
+ * @param {Boolean}  includeTime  Whether to take the date and time into consideration or just the date
+ * @return {Boolean}              True if date portion matches an occurence date. False otherwise.
  */
 function isOccurrenceDate(evt, occDate, includeTime) {
+  var expansion, next, temp, ctr = 0, max = cfg.MAX_RECURRENCE_EXPANSION;
   evt = evt instanceof ICAL.Component ? evt : new ICAL.Component(evt);
-  occDate = occDate instanceof ICAL.Time ? occDate : ICAL.Time.fromDateTimeString(occDate);
-  var expansion = getRecurrenceExpansion(evt);
-  var next, ctr = 0, max = cfg.MAX_RECURRENCE_EXPANSION, result;
+  occDate = occDate instanceof ICAL.Time ? moment(occDate.toString()) : moment(occDate);
+  expansion = getRecurrenceExpansion(evt);
   while( (next = expansion.next()) && (ctr < max) ) {
-    result = next.compare(occDate);
-    if(result === 0) {
-      return true;
+    temp = moment(next.toString());
+    if(includeTime) {
+      if(temp.isSame(occDate)) {
+        return true;
+      }
+    } else {
+      dayBefore = temp.clone().subtract(1, "day").endOf("day");
+      dayAfter = temp.clone().add(1, "day").startOf("day");
+      if(occDate.isBetween(dayBefore, dayAfter)) {
+        return true;
+      }
     }
-    if( result > 0 ) { break; }
+    if( temp.startOf("day").isAfter(occDate) ) { break; }
     ++ctr;
   }
   return false;
@@ -502,28 +511,32 @@ function getExceptionFromList(recurrenceId, eventArray) {
 }
 
 /**
- * Expand an event into concrete instances
- * Instances are represented by an object suitable for full calendar
- * @param  {Object} evt The event
- * @return {Array} Array of instances
+ * Expand non-repeating event
  */
-function expandEvent(evt) {
-  var e = new ICAL.Event(new ICAL.Component(evt[0]));
-  if(!e.isRecurring()) {
-    return [{
-      id: e.uid,
-      title: e.summary,
-      allDay: false,
-      start: e.startDate.toString(),
-      end: e.endDate.toString()
-    }];
+function expandNonRepeatingEvent(e, from, to) {
+  var fullCalEvt = {
+    id: e.uid,
+    title: e.summary,
+    allDay: false,
+    start: e.startDate.toString(),
+    end: e.endDate.toString()
+  };
+  if(from && to) {
+    return (e.startDate.compare(from) >= 0 && e.startDate.compare(to) <= 0) ? [fullCalEvt] : [];
   }
-  for(var i = 1; i < evt.length; ++i) {
-    e.relateException(new ICAL.Event(new ICAL.Component(evt[i])));
+  else {
+    return [fullCalEvt];
   }
-  var occ, occDetails, fullCalEvt, events = [];
-  i = e.iterator();
-  while(i && (occ = i.next())) {
+}
+
+/** 
+ * Expand a repeating event
+ */
+function expandRepeatingEvent(e, from, to) {
+  var iterator = e.iterator(), occ, occDetails, fullCalEvt, events = [], 
+      max = cfg.MAX_RECURRENCE_EXPANSION, ctr = 0;
+
+  while(iterator && (occ = iterator.next()) && (ctr < max)) {
     occDetails = e.getOccurrenceDetails(occ);
     fullCalEvt = {
       id: occDetails.item.uid,
@@ -532,10 +545,73 @@ function expandEvent(evt) {
       start: occDetails.startDate.toString(),
       end: occDetails.endDate.toString()
     };
-    events.push(fullCalEvt);
+    if(from && to) {
+      if(occDetails.startDate.compare(from) >= 0 && occDetails.startDate.compare(to) <= 0) {
+        events.push(fullCalEvt);
+      }
+    }
+    else {
+      events.push(fullCalEvt);
+    }
+    ++ctr;
   }
   return events;
 }
+
+/**
+ * Expand an event into concrete instances
+ * Instances are represented by an objects suitable for full calendar
+ * @param  {Object}  evt   The event
+ * @param  {String}  from  The date to start expanding from
+ * @param  {String}  to    The date to stop expanding on
+ * @param  {Boolean} inc   Whether to include occurrences on from and to dates
+ * @return {Array}         Array of instances
+ */
+function expandEvent(evt, from, to, inc) {
+  var e = evt instanceof ICAL.Component ? evt : new ICAL.Component(evt[0]);
+  var dtstart = e.getFirstProperty("dtstart");
+  if(from) {
+    from = inc ? moment(from).format(cfg.DATE_NO_TIMEZONE_FORMAT_STRING) : moment(from).add(1, "ms").format(cfg.DATE_NO_TIMEZONE_FORMAT_STRING);
+    from = ICAL.Time.fromDateTimeString(from, dtstart);
+  }
+  if(to) {
+    to = inc ? moment(to).format(cfg.DATE_NO_TIMEZONE_FORMAT_STRING) : moment(to).subtract(1, "ms").format(cfg.DATE_NO_TIMEZONE_FORMAT_STRING);
+    to = ICAL.Time.fromDateTimeString(to, dtstart);
+  }
+  e = new ICAL.Event(e);
+  for(var i = 1; i < evt.length; ++i) {
+    e.relateException(new ICAL.Event(new ICAL.Component(evt[i])));
+  }  
+  if(e.isRecurring()) {
+    return expandRepeatingEvent(e, from, to);
+  }
+  else {
+    return expandNonRepeatingEvent(e, from, to);
+  }
+}
+
+/**
+ * List events. Defaults to a 30-day window
+ */
+function listEvents(from, to, callback) {
+  var dtTimeFormat = "YYYY-MM-DDTHH:mm:ss", now = moment(), evts = [], expanded;
+  from = from || moment([now.year(), now.month()]).format(dtTimeFormat);
+  to = to || moment(from).endOf("month").hours(23).minutes(59).seconds(59).format(dtTimeFormat);
+  db.listEvents(from, to, function listEventsCallback(err, possibleEvts){
+    if(err) return callback(err);
+    possibleEvts.nonRepeating.forEach(function(doc){
+      evts = evts.concat(expandEvent(doc.vevents));
+    });
+    possibleEvts.repeating.forEach(function(doc){
+      // Always expand because expand will only return events/occurrences in the date range
+      expanded = expandEvent(doc.vevents, from, to, true);
+      evts = evts.concat(expanded);
+    });
+    console.log("listEvents() evts: ", evts);
+    callback(null, evts);
+  });
+}
+
 
 /**
  * Create a new exception event
@@ -740,7 +816,7 @@ function updateThisAndFutureSecondPlusOcc(opts, evt) {
     var exEvt = new ICAL.Component(evt[i]);
     if( (+new Date(exEvt.getFirstPropertyValue("dtstart").toString())) > +new Date(seriesStartDate) ) {
       var exOccDate = exEvt.getFirstPropertyValue("recurrence-id");
-      if(newEvtRepeats && isOccurrenceDate(newEvt, exOccDate, false)) {
+      if(newEvtRepeats && isOccurrenceDate(newEvt, exOccDate, true)) {
         updateExceptionEvent(newEvtValues, exEvt);
         if(exceptionEventDifferentThanMainEvent(exEvt, newEvt)) {
           vevents.push(exEvt.toJSON());
@@ -784,7 +860,7 @@ function updateMainEventAndAllExceptions(opts, evt) {
   for(var i = 1; i < evt.length; ++i) {
     var excepEvt = new ICAL.Component(evt[i]);
     // Remove exception if there isn't an occurrence date that matches its recurrence-id (repeat settings may have changed)
-    if(!isOccurrenceDate(mainEvt, excepEvt.getFirstPropertyValue("recurrence-id"))) {
+    if(!isOccurrenceDate(mainEvt, excepEvt.getFirstPropertyValue("recurrence-id"), true)) {
       evt.splice(i, 1);
       continue;
     }
@@ -995,7 +1071,9 @@ var api = {
   updateMainEvent : updateMainEvent,
 
   // Testing purposes
-  expandEvent : expandEvent
+  expandEvent : expandEvent,
+
+  listEvents: listEvents
 
 };
 

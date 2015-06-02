@@ -1,16 +1,16 @@
-var libpath = "/Users/troy/event_calendar/lib";
-var buildpath = "/Users/troy/event_calendar/build";
+var libpath = "/Users/troy/event_calendar/node/lib";
+var buildpath = "/Users/troy/event_calendar/node/build";
 var fs = require("fs");
 var util = require("util");
 var _ = require("underscore");
-var ICAL = require("ical.js");
+var ICALJS = require("ical.js");
 var moment = require("moment-timezone");
 var assert = require("chai").assert;
 var nock = require("nock");
 var sinon = require("sinon");
-var db = require(libpath + "/node/db");
-var ec = require(libpath + "/node/event_calendar");
-var testResultsDir = "/Users/troy/calendar_events/lib/browser";
+var db = require(libpath + "/db");
+var ec = require(libpath + "/event_calendar");
+var testResultsDir = "/Users/troy/event_calendar/browser/test_site";
 
 
 /**
@@ -26,7 +26,7 @@ nock.disableNetConnect();
 function jCalToFullCalendar(jcal, isMultiEvent) {
   jcal = JSON.parse(JSON.stringify(jcal));
   function convertEvt(evt) {
-    evt = evt instanceof ICAL.Component ? evt : new ICAL.Component(evt);
+    evt = evt instanceof ICALJS.Component ? evt : new ICALJS.Component(evt);
     return {
       id : evt.getFirstPropertyValue("uid"),
       title : evt.getFirstPropertyValue("summary"),
@@ -180,7 +180,7 @@ var repeatingEvtWithExceptionDoc = {
 describe("private helper functions:", function() {
 
   describe("isOccurrenceDate", function(){
-    it("Should return a boolean to indicate if date is an occurrence date", function(){
+    it("Should return true if date is an occurrence date while comparing date only", function(){
       var opts = {
         dtstart: "2014-12-01T09:00:00",
         dtend: "2014-12-01T10:00:00",
@@ -190,11 +190,23 @@ describe("private helper functions:", function() {
         count: 5
       };
       var evt = ec.newEvent(opts);
-      assert(ec.isOccurrenceDate(evt, "2014-12-01T09:00:00"));
-      assert(!ec.isOccurrenceDate(evt, "2014-12-01T09:01:00"));
-      console.log(evt);
+      assert(ec.isOccurrenceDate(evt, "2014-12-01T09:00:00"), "2014-12-01T09:00:00 is not an occurrence date but it should be");
     });
-    
+  });
+
+  describe("isOccurrenceDate", function(){
+    it("Should return false when a date is not an occurrence date while comparing exact date and time", function(){
+      var opts = {
+        dtstart: "2014-12-01T09:00:00",
+        dtend: "2014-12-01T10:00:00",
+        tzid: "America/Los_Angeles",
+        summary: "My summary",
+        freq: "DAILY",
+        count: 5
+      };
+      var evt = ec.newEvent(opts);
+      assert(!ec.isOccurrenceDate(evt, "2014-12-01T09:01:00", true), "2014-12-01T09:01:00 is an occurrence date but it should not be");
+    });
   });
 
   describe("newExceptionEvent", function(){
@@ -213,11 +225,11 @@ describe("private helper functions:", function() {
       var exceptionSettings = {
         dtstart : "2014-12-03T11:00:00",
         dtend : "2014-12-03T12:00:00",
-        uid : new ICAL.Component(evt).getFirstPropertyValue("uid"),
+        uid : new ICALJS.Component(evt).getFirstPropertyValue("uid"),
         summary: "Exception summary"
       };
       var exceptionEvent = ec.newExceptionEvent(exceptionSettings, evt);
-      assert(new ICAL.Component(exceptionEvent).getFirstPropertyValue("dtstart").toString() === exceptionSettings.dtstart, "dtstart not set correctly");
+      assert(new ICALJS.Component(exceptionEvent).getFirstPropertyValue("dtstart").toString() === exceptionSettings.dtstart, "dtstart not set correctly");
     });
   });
 
@@ -275,7 +287,7 @@ describe("private helper functions:", function() {
         count: "6"
       };
       var evt = ec.updateMainEvent(updates, doc.vevents[0]);
-      evt = new ICAL.Component(evt);
+      evt = new ICALJS.Component(evt);
       assert(evt.getFirstPropertyValue("rrule") === null, "count not removed when freq not set");
     });
   });
@@ -291,7 +303,7 @@ describe("private helper functions:", function() {
         count: 10
       };
       var evt = ec.updateMainEvent(updates, doc.vevents[0]);
-      evt = new ICAL.Component(evt);
+      evt = new ICALJS.Component(evt);
       //console.log(util.inspect(evt.toJSON(), {depth: 5, colors: true}));
       assert(evt.getFirstPropertyValue("dtstart").toString() === updates.dtstart, "dtstart not updated properly");
       assert(evt.getFirstPropertyValue("rrule").freq === updates.freq, "freq not updated propertly");
@@ -324,16 +336,16 @@ describe("Update property ->", function() {
   });
 
   // dtstart
-  it("Should update dtstart", function(){
+  it("Should update dtstart", function(done){
       doc = JSON.parse(JSON.stringify(nonRepeatingEvtDoc));
       var changes = {
-        uid : new ICAL.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
+        uid : new ICALJS.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
         dtstart: "2014-12-26T05:27:45",
         dtend: "2014-12-26T06:27:45"
       };
       ec.updateEvent(changes, function(err, updatedEvt) {
         assert(err === null, "err is not null");
-        updatedEvt = new ICAL.Component(updatedEvt[0]);
+        updatedEvt = new ICALJS.Component(updatedEvt[0]);
         var chk = updatedEvt.getFirstProperty("dtstart").getFirstValue("dtstart").toString();
         assert(chk == changes.dtstart);
         done();
@@ -341,15 +353,15 @@ describe("Update property ->", function() {
     });
 
   // freq
-  it("Should update freq", function(){
+  it("Should update freq", function(done){
     doc = JSON.parse(JSON.stringify(repeatingEvtDoc));
     var changes = {
-      uid: new ICAL.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
+      uid: new ICALJS.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
       freq: "MONTHLY"
     };
     ec.updateEvent(changes, function(err, updatedEvt){
       assert.isNull(err);
-      updatedEvt = new ICAL.Component(updatedEvt[0]);
+      updatedEvt = new ICALJS.Component(updatedEvt[0]);
       var chk = updatedEvt.getFirstProperty("rrule").getFirstValue().freq;
       assert(chk == changes.freq, chk + " !== " + changes.freq);
       done();
@@ -357,32 +369,32 @@ describe("Update property ->", function() {
   });
 
   // interval
-  it("Should update interval", function(){
+  it("Should update interval", function(done){
     doc = JSON.parse(JSON.stringify(repeatingEvtDoc));
     var changes = {
-      uid: new ICAL.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
+      uid: new ICALJS.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
       freq: "DAILY", // no change here just want the new repeat settings to be valid
       interval: 2
     };
     ec.updateEvent(changes, function(err, updatedEvt){
       assert.isNull(err);
-      updatedEvt = new ICAL.Component(updatedEvt[0]);
+      updatedEvt = new ICALJS.Component(updatedEvt[0]);
       var chk = updatedEvt.getFirstProperty("rrule").getFirstValue().interval;
       assert(chk == changes.interval, chk + " !== " + changes.interval);
       done();
     });
   });
 
-  it("Should update byday", function(){
+  it("Should update byday", function(done){
     doc = JSON.parse(JSON.stringify(repeatingEvtDoc));
     var changes = {
-      uid: new ICAL.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
+      uid: new ICALJS.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
       freq: "DAILY",
       byday: ["mo", "2tu"],
     };
     ec.updateEvent(changes, function(err, updatedEvt) {
       assert.isNull(err, "update err is not null");
-      updatedEvt = new ICAL.Component(updatedEvt[0]);
+      updatedEvt = new ICALJS.Component(updatedEvt[0]);
       var chk = updatedEvt.getFirstProperty("rrule").getFirstValue().getComponent("byday");
       assert(_.isEqual(chk.sort(), changes.byday.sort()), chk + " !== " + changes.byday);
       done();
@@ -390,16 +402,16 @@ describe("Update property ->", function() {
   });
 
   // bymonth
-  it("Should update bymonth", function(){
+  it("Should update bymonth", function(done){
     doc = JSON.parse(JSON.stringify(repeatingEvtDoc));
     var changes = {
-      uid: new ICAL.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
+      uid: new ICALJS.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
       freq: "DAILY",
       bymonth: [2, 8]
     };
     ec.updateEvent(changes, function(err, updatedEvt) {
       assert.isNull(err, "update err is not null");
-      updatedEvt = new ICAL.Component(updatedEvt[0]);
+      updatedEvt = new ICALJS.Component(updatedEvt[0]);
       var chk = updatedEvt.getFirstProperty("rrule").getFirstValue().getComponent("bymonth");
       assert(_.isEqual(chk.sort(), changes.bymonth.sort()), chk + " !== " + changes.bymonth);
       done();
@@ -407,16 +419,16 @@ describe("Update property ->", function() {
   });
 
   // bymonthday
-  it("Should update bymonthday", function(){
+  it("Should update bymonthday", function(done){
     doc = JSON.parse(JSON.stringify(repeatingEvtDoc));
     var changes = {
-      uid: new ICAL.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
+      uid: new ICALJS.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
       freq: "DAILY",
       bymonthday: [1, 15],
     };
     ec.updateEvent(changes, function(err, updatedEvt){
       assert.isNull(err, "update err is not null");
-      updatedEvt = new ICAL.Component(updatedEvt[0]);
+      updatedEvt = new ICALJS.Component(updatedEvt[0]);
       var chk = updatedEvt.getFirstProperty("rrule").getFirstValue().getComponent("bymonthday");
       assert(_.isEqual(chk.sort(), changes.bymonthday.sort()), chk + " !== " + changes.bymonthday);
       done();
@@ -424,16 +436,16 @@ describe("Update property ->", function() {
   });
 
   // bysetpos
-  it("Should update bysetpos", function(){
+  it("Should update bysetpos", function(done){
     doc = JSON.parse(JSON.stringify(repeatingEvtDoc));
     var changes = {
-      uid: new ICAL.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
+      uid: new ICALJS.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
       freq: "DAILY",
       bysetpos: [1, 2],
     };
     ec.updateEvent(changes, function(err, updatedEvt) {
       assert.isNull(err, "update err is not null");
-      updatedEvt = new ICAL.Component(updatedEvt[0]);
+      updatedEvt = new ICALJS.Component(updatedEvt[0]);
       var chk = updatedEvt.getFirstProperty("rrule").getFirstValue().getComponent("bysetpos");
       assert(_.isEqual(chk.sort(), changes.bysetpos.sort()), chk + " !== " + changes.bysetpos);
       done();
@@ -441,16 +453,16 @@ describe("Update property ->", function() {
   });
 
   
-  it("Should update count", function(){
+  it("Should update count", function(done){
     doc = JSON.parse(JSON.stringify(repeatingEvtDoc));
     var changes = {
-      uid: new ICAL.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
+      uid: new ICALJS.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
       freq: "DAILY",
       count: 5
     };
     ec.updateEvent(changes, function(err, updatedEvt){
       assert.isNull(err, "update err is not null");
-      updatedEvt = new ICAL.Component(updatedEvt[0]);
+      updatedEvt = new ICALJS.Component(updatedEvt[0]);
       var chk = updatedEvt.getFirstProperty("rrule").getFirstValue().count;
       assert(_.isEqual(chk, changes.count), chk + " !== " + changes.count);
       done();
@@ -458,16 +470,16 @@ describe("Update property ->", function() {
   });
 
   // until
-  it("Should update until", function(){
+  it("Should update until", function(done){
     doc = JSON.parse(JSON.stringify(repeatingEvtDoc));
     var changes = {
-      uid: new ICAL.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
+      uid: new ICALJS.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
       freq: "DAILY",
       until: "2016-01-01T09:00:00"
     };
     ec.updateEvent(changes, function(err, updatedEvt){
       assert.isNull(err, "update err is not null");
-      updatedEvt = new ICAL.Component(updatedEvt[0]);
+      updatedEvt = new ICALJS.Component(updatedEvt[0]);
       var chk = updatedEvt.getFirstProperty("rrule").getFirstValue().until.toString();
       assert(chk === changes.until, chk + " !== " + changes.until);
       done();
@@ -475,10 +487,10 @@ describe("Update property ->", function() {
   });
 
   // Update multiple
-  it("Should update multiple properties", function(){
+  it("Should update multiple properties", function(done){
     doc = JSON.parse(JSON.stringify(repeatingEvtDoc));
     var changes = {
-      uid: new ICAL.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
+      uid: new ICALJS.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
       dtstart : "2014-12-01T08:30:00",
       dtend : "2014-12-01T09:30:00",
       freq: "DAILY",
@@ -491,7 +503,7 @@ describe("Update property ->", function() {
     ec.updateEvent(changes, function(err, updatedEvt){
       assert.isNull(err, "update err not null");
       console.log("updatedEvt: ", util.inspect(updatedEvt, {depth: null, colors: true}));
-      updatedEvt = new ICAL.Component(updatedEvt[0]);
+      updatedEvt = new ICALJS.Component(updatedEvt[0]);
       // dtstart
       var chk = updatedEvt.getFirstProperty("dtstart").getFirstValue("dtstart").toString();
       assert(chk == changes.dtstart, chk + " !== " + changes.dtstart);
@@ -555,9 +567,9 @@ describe("Update An Event", function() {
     ec.updateEvent(opts, function(err, evt) {
       // console.log(util.inspect(arguments, {depth: 5, colors: true}));
       assert(err === null, "err is not null");
-      assert(new ICAL.Component(evt).getFirstPropertyValue("summary") !== opts.summary, "original summary modified when it should not have been");
+      assert(new ICALJS.Component(evt).getFirstPropertyValue("summary") !== opts.summary, "original summary modified when it should not have been");
       assert(evt.length > 1, "evt.length not > 1" + evt.length);
-      assert(new ICAL.Component(evt[1]).getFirstPropertyValue("summary")=== opts.summary, "summary not updated properly");
+      assert(new ICALJS.Component(evt[1]).getFirstPropertyValue("summary")=== opts.summary, "summary not updated properly");
       done();
     });
   });
@@ -576,7 +588,7 @@ describe("Update An Event", function() {
     ec.updateEvent(opts, function(err, evt) {
       //console.log(util.inspect(arguments, {depth: 5, colors: true}));
       assert(err === null, "err is not null");
-      var e = new ICAL.Component(evt[1]);
+      var e = new ICALJS.Component(evt[1]);
       assert(e.getFirstPropertyValue("recurrence-id") == opts.recurrenceId, "recurrence-id not equal to opts.recurrenceId");
       assert(e.getFirstPropertyValue("dtstart").toString() === opts.dtstart, "dtstart not updated properly");
       assert(e.getFirstPropertyValue("summary")=== opts.summary, "summary not updated properly");
@@ -596,7 +608,7 @@ describe("Update An Event", function() {
     ec.updateEvent(opts, function(err, evt) {
       //console.log(util.inspect(arguments, {depth: 5, colors: true}));
       assert(err === null, "err is not null");
-      var mainEvt = new ICAL.Component(evt[0]), exEvt = new ICAL.Component(evt[1]);
+      var mainEvt = new ICALJS.Component(evt[0]), exEvt = new ICALJS.Component(evt[1]);
       assert(mainEvt.getFirstPropertyValue("summary") !== opts.summary, "main event summary updated when it should not have been");
       assert(doc.vevents.length === 2, "doc.vevents.length !== 2");
       assert(exEvt.getFirstPropertyValue("summary") === opts.summary, "summary not updated properly");
@@ -616,7 +628,7 @@ describe("Update An Event", function() {
     ec.updateEvent(opts, function(err, evtJSON) {
       //console.log(util.inspect(doc, {colors: true, depth: 5}));
       assert(err === null, "err is not null");
-      var mainEvt = new ICAL.Component(doc.vevents[0]);
+      var mainEvt = new ICALJS.Component(doc.vevents[0]);
       assert(mainEvt.getFirstPropertyValue("summary") === opts.summary, "main event summary not updated properly");
       assert(doc.vevents.length === 1, "doc.vevents.length !== 1");
       done();
@@ -634,7 +646,7 @@ describe("Update An Event", function() {
     ec.updateEvent(opts, function(err, evtJSON) {
       //console.log(util.inspect(evtJSON, {colors: true, depth: 5}));
       assert(err === null, "err is not null");
-      var mainEvt = new ICAL.Component(doc.vevents[0]);
+      var mainEvt = new ICALJS.Component(doc.vevents[0]);
       assert(mainEvt.getFirstPropertyValue("rrule").freq === opts.freq, "main event freq not updated properly");
       assert(doc.vevents.length === 1, "doc.vevents.length !== 1");
       done();
@@ -655,7 +667,7 @@ describe("Update An Event", function() {
     ec.updateEvent(opts, function(err, evtJSON) {
       //console.log(util.inspect(doc, {colors: true, depth: 5}));
       assert(err === null, "err is not null");
-      var mainEvt = new ICAL.Component(doc.vevents[0]);
+      var mainEvt = new ICALJS.Component(doc.vevents[0]);
       assert(mainEvt.getFirstPropertyValue("dtstart").toString() === opts.dtstart, "dtstart not updated properly");
       assert(doc.vevents.length === 1, "doc.vevents.length is not 1"); // exception should be removed because it matches main event after update
       done();
@@ -676,7 +688,7 @@ describe("Update An Event", function() {
     ec.updateEvent(opts, function(err, evtJSON) {
       //console.log(util.inspect(doc, {colors: true, depth: 5}));
       assert(err === null, "err is not null");
-      var mainEvt = new ICAL.Component(doc.vevents[0]);
+      var mainEvt = new ICALJS.Component(doc.vevents[0]);
       assert(mainEvt.getFirstPropertyValue("dtstart").toString() === opts.dtstart, "dtstart not updated properly");
       assert(doc.vevents.length === 1, "doc.vevents.length !== 1");
       done();
@@ -783,7 +795,7 @@ describe("Update An Event", function() {
     ec.updateEvent(opts, function(err, evtJSON) {
       //console.log(util.inspect(doc, {colors: true, depth: 5}));
       assert(err === null, "err is not null");
-      var mainEvt = new ICAL.Component(doc.vevents[0]), exEvt1 = new ICAL.Component(doc.vevents[1]), exEvt2 = new ICAL.Component(doc.vevents[2]);
+      var mainEvt = new ICALJS.Component(doc.vevents[0]), exEvt1 = new ICALJS.Component(doc.vevents[1]), exEvt2 = new ICALJS.Component(doc.vevents[2]);
       assert(mainEvt.getFirstPropertyValue("summary").toString() === opts.summary, "main evt summary not updated properly");
       assert( exEvt1.getFirstPropertyValue("summary").toString() === opts.summary, "exception event 1 summary not updated properly");
       assert( exEvt2.getFirstPropertyValue("summary").toString() === opts.summary, "exception event 2 summary not updated properly");
@@ -866,10 +878,10 @@ describe("Update An Event", function() {
     ec.updateEvent(opts, function(err, evt) {
       //console.log(util.inspect(arguments, {colors: true, depth: 5}));
       assert(err === null, "err is not null");
-      var oldMain = new ICAL.Component(doc.vevents[0]);
+      var oldMain = new ICALJS.Component(doc.vevents[0]);
       assert(oldMain.getFirstPropertyValue("rrule").until == "2014-11-01T23:59:59", "until not set properly on old main event");
       assert(oldMain.getFirstPropertyValue("summary") == "Old summary", "old main summary updated when it should not have been");
-      var newEvt = new ICAL.Component(evt[0]);
+      var newEvt = new ICALJS.Component(evt[0]);
       //console.log(util.inspect(evt[0], {depth: null, colors: true}));
       assert(newEvt.getFirstPropertyValue("uid") !== oldMain.getFirstPropertyValue("uid"), "new event's UID is not different than the old event's UID");
       assert(newEvt.getFirstPropertyValue("summary") == opts.summary, "new event summary not created correctly");
@@ -953,7 +965,7 @@ describe("Update An Event", function() {
       //console.log(util.inspect(doc, {colors: true, depth: 5}));
       assert(err === null, "err is not null");
       // Assert old event has until 23:59:59
-      var oldMain = new ICAL.Component(doc.vevents[0]);
+      var oldMain = new ICALJS.Component(doc.vevents[0]);
       assert(oldMain.getFirstPropertyValue("rrule").until == "2014-11-01T23:59:59", "until not set properly on old main event");
       // Assert exception event was removed - Don"t have access to the new doc here so can"t
       done();
@@ -976,7 +988,7 @@ describe("Update An Event", function() {
       //console.log(util.inspect(doc, {colors: true, depth: 5}));
       assert(err === null, "err is not null");
       for(var evt, i = 0; i < doc.vevents.length; ++i) {
-        evt = new ICAL.Component(doc.vevents[i]);
+        evt = new ICALJS.Component(doc.vevents[i]);
         assert(evt.getFirstPropertyValue("summary") == opts.summary, "summary not updated propertly");
       }
       done();
@@ -1032,7 +1044,7 @@ describe("Expand an event", function(){
     var expansion = ec.expandEvent(doc.vevents);
     assert(expansion.length === 1, "expansion.length !== 1");
     var evt = expansion[0];
-    var origEvt = new ICAL.Event(new ICAL.Component(doc.vevents[0]));
+    var origEvt = new ICALJS.Event(new ICALJS.Component(doc.vevents[0]));
     assert(evt.title == origEvt.summary, "title does not match summary");
     assert(evt.start == origEvt.startDate.toString(), "start does not match dtstart");
     assert(evt.end == origEvt.endDate.toString(), "end does not match dtend");
@@ -1043,10 +1055,18 @@ describe("Expand an event", function(){
     var expansion = ec.expandEvent(doc.vevents);
     assert(expansion.length == 5, "expansion.length !== 5");
     var ex = expansion[1];
-    assert(ex.title == new ICAL.Event(new ICAL.Component(repeatingEvtWithExceptionDoc.vevents[1])).summary, "title does not match summary");
+    assert(ex.title == new ICALJS.Event(new ICALJS.Component(repeatingEvtWithExceptionDoc.vevents[1])).summary, "title does not match summary");
     writeToFile(expansion, function(){ done(); });
   });
 
+  it("Should expand a repeating event within a date range", function(done) {
+    doc = JSON.parse(JSON.stringify(repeatingEvtWithExceptionDoc));
+    var expansion = ec.expandEvent(doc.vevents, "2014-10-01T09:00:00", "2014-12-30T09:00:00", true);
+    assert(expansion.length == 5, "expansion.length !== 5");
+    var ex = expansion[1];
+    assert(ex.title == new ICALJS.Event(new ICALJS.Component(repeatingEvtWithExceptionDoc.vevents[1])).summary, "title does not match summary");
+    writeToFile(expansion, function(){ done(); });
+  });
 });
 
 
@@ -1076,12 +1096,12 @@ describe("Delete event", function(){
   it("Should add an exdate when deleting an instance only with no pre-existing exception", function(done) {
     doc = JSON.parse(JSON.stringify(repeatingEvtDoc));
     var opts = {
-      uid : new ICAL.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
+      uid : new ICALJS.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
       recurrenceId : "2014-11-10T09:00:00",
       applyTo: "instanceOnly"
     };
     ec.deleteEvent(opts, function(err, evt){
-      assert(new ICAL.Component(evt[0]).getFirstPropertyValue("exdate").toString() == opts.recurrenceId, "exdate not set properly");
+      assert(new ICALJS.Component(evt[0]).getFirstPropertyValue("exdate").toString() == opts.recurrenceId, "exdate not set properly");
       done();
     });
   });
@@ -1089,12 +1109,12 @@ describe("Delete event", function(){
   it("Should add an exdate and remove exception when deleting an instance only with a pre-existing exception", function(done) {
     doc = JSON.parse(JSON.stringify(repeatingEvtWithExceptionDoc));
     var opts = {
-      uid : new ICAL.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
+      uid : new ICALJS.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
       recurrenceId : "2014-11-10T09:00:00",
       applyTo: "instanceOnly"
     };
     ec.deleteEvent(opts, function(err, evt){
-      assert(new ICAL.Component(evt[0]).getFirstPropertyValue("exdate").toString() == opts.recurrenceId, "exdate not set properly");
+      assert(new ICALJS.Component(evt[0]).getFirstPropertyValue("exdate").toString() == opts.recurrenceId, "exdate not set properly");
       assert(evt.length == 1, "exception event not removed");
       done();
     });
@@ -1103,12 +1123,12 @@ describe("Delete event", function(){
   it("Should stop event from repeating and remove exception when deleting an occurrence of an event with an excpetion and applying to this and future", function(done) {
     doc = JSON.parse(JSON.stringify(repeatingEvtWithExceptionDoc));
     var opts = {
-      uid : new ICAL.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
+      uid : new ICALJS.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
       recurrenceId : "2014-11-10T09:00:00",
       applyTo: "thisAndFuture"
     };
     ec.deleteEvent(opts, function(err, evt){
-      var until = new ICAL.Component(evt[0]).getFirstPropertyValue("rrule").until.toString();
+      var until = new ICALJS.Component(evt[0]).getFirstPropertyValue("rrule").until.toString();
       assert(until, "until not added to the main event");
       assert(evt.length == 1, "exception event not removed");
       done();
@@ -1118,7 +1138,7 @@ describe("Delete event", function(){
   it("Should delete the entire event when applying delete to all", function(done){
     doc = JSON.parse(JSON.stringify(repeatingEvtDoc));
     var opts = {
-      uid : new ICAL.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
+      uid : new ICALJS.Component(doc.vevents[0]).getFirstPropertyValue("uid"),
       applyTo: "all"
     };
     ec.deleteEvent(opts, function(err, evt){

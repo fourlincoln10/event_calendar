@@ -1,6 +1,6 @@
 var _ = require("underscore"),
     nano = require("nano")({"url": "http://localhost:5984"}),
-    dbName = "intellassetbak",
+    dbName = "events",
     db = nano.use(dbName);
 
 /**
@@ -11,15 +11,15 @@ var _ = require("underscore"),
 exports.queryView = function queryView(options, callback) {
   var msg;
   if(!options.designDoc) {
-    msg = 'Design doc not passed to function';
+    msg = "Design doc not passed to function";
     return callback(new appError.badRequest(msg));
   }
   if(!options.view) {
-    msg = 'View not passed to function';
+    msg = "View not passed to function";
     return callback(new appError.badRequest(msg));
   }
 
-  var viewOptions = _.extend({include_docs: true}, _.omit(options, 'designDoc', 'view'));
+  var viewOptions = _.extend({include_docs: true}, _.omit(options, "designDoc", "view"));
 
   db.view(options.designDoc, options.view, viewOptions, function (err, res) {
     return err ? callback(err) : callback(null, res.rows);
@@ -38,11 +38,41 @@ exports.updateDoc = function updateDoc(obj, callback) {
   // stub
 };
 
+exports.listEvents = function listEvents(from, to, callback) {
+  var evts = {repeating: [], nonRepeating: []};
+  var options = {
+    designDoc: "events",
+    view: "nonrepeatingByDtstart",
+    startkey: from,
+    endkey: to
+  };
+  console.log("db.listEvents() options: ", options);
+  module.exports.queryView(options, function(err, rows) {
+    if(err) return callback(err);
+    evts.nonRepeating = rows.map(function(row){return row.doc;});
+    addRepeatingEvents();
+  });
+
+  function addRepeatingEvents() {
+    options = {
+      designDoc: "events",
+      view: "repeatingByDtstart",
+      endkey: to
+    };
+    module.exports.queryView(options, function(err, rows) {
+      if(err) return err;
+      rows.forEach(function(row){
+        evts.repeating.push(row.doc);
+      });
+      return callback(null, evts);
+    });
+  }
+};
 
 exports.getEvent = function getEventByUid(uid, callback) {
   var options = {
-    designDoc: 'calendarEvents',
-    view: 'byUid',
+    designDoc: "events",
+    view: "byUid",
     key: uid
   };
   module.exports.queryView(options, function(err, doc) {
@@ -52,8 +82,8 @@ exports.getEvent = function getEventByUid(uid, callback) {
 
 exports.updateEvent = function updateEvent(uid, evt, callback) {
   var options = {
-    designDoc: 'calendarEvents',
-    view: 'byUid',
+    designDoc: "events",
+    view: "byUid",
     key: uid
   };
   module.exports.queryView(options, function(err, doc){

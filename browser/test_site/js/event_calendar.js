@@ -54,6 +54,7 @@ Event_Calendar.Cfg = {
   MONTHLY_INTERVAL_TIME_UNIT  : "month(s)",
   YEARLY_INTERVAL_TIME_UNIT   : "year(s)",
   SUMMARY_ERR_MSG             : "Must be 64-characters or less",
+  LOCATION_ERROR              : "Must be 256-characters or less",
   DESCRIPTION_ERROR           : "Must be 256-characters or less",
   FREQ_ERR_MSG                : "Invalid frequency",
   FREQ_REQUIRED_ERR_MSG       : "Required",
@@ -343,6 +344,8 @@ Event_Calendar.Validate = {
       return this.validateRRule(val);
     } else if (prop == "summary") {
       return this.validateSummary(val);
+    } else if (prop == "location") {
+      return this.validateLocation(val);
     } else if (prop == "description") {
       return this.validateDescription(val);
     } 
@@ -351,8 +354,8 @@ Event_Calendar.Validate = {
 
   validateIsoDateString : function validateIsoDateString(d) {
     return typeof d == "string" && 
-    ( (d.search(Event_Calendar.Cfg.ISO_DATE_REGEX) > -1) || (d.search(Event_Calendar.Cfg.ISO_DATETIME_REGEX) > -1) ) && 
-    moment(d).isValid();
+      ( (d.search(Event_Calendar.Cfg.ISO_DATE_REGEX) > -1) || (d.search(Event_Calendar.Cfg.ISO_DATETIME_REGEX) > -1) ) && 
+      moment(d).isValid();
   },
 
   validateDtstart : function validateDtstart(dtstart) {
@@ -375,6 +378,13 @@ Event_Calendar.Validate = {
   validateSummary : function validateSummary(sum) {
     if(sum.length > 64) {
       return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.SUMMARY_ERROR, "summary");
+    }
+    return true;
+  },
+
+  validateLocation : function validateLocation(loc) {
+    if(loc.length > 256) {
+      return new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.LOCATION_ERROR, "location");
     }
     return true;
   },
@@ -477,14 +487,20 @@ Event_Calendar.Validate = {
     if( r.freq && r.freq == "yearly" && Array.isArray(r.bymonth) && r.bymonth.length > 1 && Array.isArray(r.byday) && r.byday.length > 1) {
       errors.push(new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.MULT_MONTHS_AND_OCC_ERR_MSG, "bymonth"));
     }
-    return errors;
+    if(errors.length > 0) {
+      return new Event_Calendar.Errors.ErrorGroup("", errors);
+    }
+    return true;
   },
 
   validateEvent : function validateEvent(e) {
     var ctx = this;
     var errors = [];
     var rrule = _.pick(e, Event_Calendar.Cfg.REPEAT_PROPERTIES);
-    var everythingElse =  _.omit(e, Event_Calendar.Cfg.REPEAT_PROPERTIES);
+    var everythingElse = _.pick(e, _.difference(Event_Calendar.Cfg.FIELDS_MANAGED_BY_VIEW, Event_Calendar.Cfg.REPEAT_PROPERTIES));
+    //var everythingElse =  _.omit(e, Event_Calendar.Cfg.REPEAT_PROPERTIES);
+    var ret;
+
     // Required Fields
     if( !("dtstart" in everythingElse) ) {
       errors.push(new Event_Calendar.Errors.RequiredError(Event_Calendar.Cfg.DTSTART_REQUIRED_ERR_MSG, "dtstart"));
@@ -492,14 +508,21 @@ Event_Calendar.Validate = {
     if( !("dtend" in everythingElse) ) {
       errors.push(new Event_Calendar.Errors.RequiredError(Event_Calendar.Cfg.DTEND_REQUIRED_ERR_MSG, "dtend"));
     }
-    // Validate individual properties
-    if(Object.keys(rrule).length > 0) { errors = errors.concat(this.validateRRule(rrule)); }
+
+    // Individual properties
+    if(Object.keys(rrule).length > 0) {
+      ret = this.validateRRule(rrule);
+      if(ret instanceof Error) {
+        errors = errors.concat(ret.errors);
+      }
+    }
     Object.keys(everythingElse).forEach(function(prop){
       var ret = ctx.validateProperty(prop, e[prop]);
       if(ret instanceof Error) {
         errors.push(ret);
       }
     });
+    
     // Multi-field validation
     if(e.dtstart && e.dtend && moment(e.dtend).isBefore(moment(e.dtstart))) {
       errors.push(new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.END_BEFORE_START_ERR_MSG, "dtend"));
@@ -507,7 +530,10 @@ Event_Calendar.Validate = {
     if(e.dtstart && e.until && (+new Date(e.dtstart) >= +new Date(e.until)) ) {
       errors.push(new Event_Calendar.Errors.InvalidError(Event_Calendar.Cfg.END_BEFORE_START_ERR_MSG, "until"));
     }
-    return errors.length > 0 ? new Event_Calendar.Errors.ErrorGroup("", errors) : true;
+    if(errors.length > 0) {
+      return new Event_Calendar.Errors.ErrorGroup("", errors);
+    }
+    return true;
   }
 
 };
@@ -691,11 +717,7 @@ Event_Calendar.Model = (function(){
       } else {
         data = curr;
         changes.forEach(function(attr) {
-          if( (cfg.REPEAT_PROPERTIES.indexOf(attr) > -1) ) {
-            container.trigger("model.change", [attr, this.getRepeatProperties()]);
-          } else {
-            container.trigger("model.change", [attr, curr[attr]]);
-          }
+          container.trigger("model.change", [attr, curr[attr]]);
         });
       }
       return this;
@@ -849,6 +871,7 @@ Event_Calendar.Basic_Inputs = (function(){
       dtendTimeInput,
       dtstartDateInput,
       dtstartTimeInput,
+      editRepeatSettingsLink,
       locationInput,
       model,
       rootContainer,
@@ -914,12 +937,14 @@ Event_Calendar.Basic_Inputs = (function(){
 
   function initEvents() {
     container.off();
-    container.on("change", "input:not(.allday,.repeat,.k-input),textarea", setModelValue);
+    container.on("change", "input:not(.allday,.repeatEnabled,.k-input),textarea", setModelValue);
     container.on("change", ".allday", allDayChange);
     container.on("change", ".repeatEnabled", repeatEnabledChange);
+    container.on("click", ".editRepeatSettings", editRepeatSettingsClick);
     container.on("click", ".save-button", save);
-    rootContainer.on("model.change", modelChangeHandler);
-    rootContainer.on("repeatSettingsModalClosed", repeatSettingsModalClosed);
+    rootContainer.on("model.change", defaultModelChangeHandler);
+    rootContainer.on("repeatSettingsSet", repeatSettingsSet);
+    rootContainer.on("repeatSettingsRemoved", repeatSettingsRemoved);
   }
 
   // -----------------------------------------------
@@ -979,15 +1004,32 @@ Event_Calendar.Basic_Inputs = (function(){
   }
 
   function repeatEnabledChange(evt) {
-    repeatEnabledInput.trigger("repeatEnabledToggled");
+    var evtToTrigger = $(evt.target).is(":checked") ? "repeatEnabled" : "repeatDisabled";
+    rootContainer.trigger(evtToTrigger);
   }
 
-  function modelChangeHandler(evt, prop, val) {
+  function defaultModelChangeHandler(evt, prop, val) {
     setProperty(prop, val);
   }
 
-  function repeatSettingsModalClosed(evt, repeatSettingsPresent) {
-    repeatEnabledInput.prop("checked", repeatSettingsPresent);
+  function repeatSettingsSet(evt) {
+    if(!editRepeatSettingsLink) {
+      var html = "<a href='#' class='editRepeatSettings'>Edit</a>"; // Templatize this
+      $(".repeat-row", container).append(html);
+      editRepeatSettingsLink = $(".editRepeatSettings", container);
+    }
+  }
+
+  function repeatSettingsRemoved(evt) {
+    if(editRepeatSettingsLink) {
+      editRepeatSettingsLink.remove();
+      editRepeatSettingsLink = null;
+    }
+    repeatEnabledInput.prop("checked", false);
+  }
+
+  function editRepeatSettingsClick(evt) {
+    rootContainer.trigger("editRepeatSettings");
   }
 
   // -----------------------------------------------
@@ -1179,7 +1221,7 @@ Event_Calendar.Basic_Inputs = (function(){
   }
 
   function save() {
-    console.log("save(): ", getValues());
+    console.log("save(): ", model.getEvent());
   }
 
   /**
@@ -1288,7 +1330,7 @@ Event_Calendar.Repeat_Settings = (function(){
     if(debouncedResize) { $(window).off("resize", debouncedResize); }
     debouncedResize = _.debounce(addAppropriateModalClass, 500);
     $(window).on("resize", debouncedResize);
-    closeBtn.off().on("click", toggleModal);
+    closeBtn.off().on("click", cancelChanges);
     cancelBtn.off().on("click", cancelChanges);
     okBtn.off().on("click", save);
     endTypeGroup.off().on("change", endTypeChange);
@@ -1296,7 +1338,9 @@ Event_Calendar.Repeat_Settings = (function(){
     intervalInput.off().on("change", simpleChange);
     countInput.off().on("change", simpleChange);
     rootContainer.on("model.change", modelChange);
-    rootContainer.on("repeatEnabledToggled", repeatEnabledToggled);
+    rootContainer.on("repeatEnabled", toggleModal);
+    rootContainer.on("repeatDisabled", removeRepeatProperties);
+    rootContainer.on("editRepeatSettings", toggleModal);
   }
 
   // -----------------------------------------------
@@ -1538,6 +1582,9 @@ Event_Calendar.Repeat_Settings = (function(){
   function setValues(values) {
     setPersistentValues(values);
     setVariableValues(values);
+    if(_.intersection(Object.keys(values), cfg.REPEAT_PROPERTIES).length > 0) {
+      rootContainer.trigger("repeatSettingsSet");
+    }
   }
 
   function setPersistentValues(values) {
@@ -1883,20 +1930,10 @@ Event_Calendar.Repeat_Settings = (function(){
     showClass = cfg.SHOW_MODAL_CLASS;
     if(modal.hasClass( showClass ) ) {
       modal.removeClass( showClass );
-      var rsPresent = Object.keys(model.getRepeatProperties()).length > 0;
-      rootContainer.trigger("repeatSettingsModalClosed", [rsPresent]);
     }
     else {
-      modal.addClass( showClass );
       setValues(model.getEvent());
-    }
-  }
-
-  function repeatEnabledToggled(evt) {
-    if($(evt.target).is(":checked")) {
-      toggleModal();
-    } else {
-      model.removeRepeatProperties();
+      modal.addClass( showClass );
     }
   }
 
@@ -1904,9 +1941,15 @@ Event_Calendar.Repeat_Settings = (function(){
     if(savedState) {
       updateModel(savedState);
     } else {
-      model.removeRepeatProperties();
+      removeRepeatProperties();
     }
     toggleModal();
+  }
+
+  function removeRepeatProperties() {
+    model.removeRepeatProperties();
+    savedState = null;
+    rootContainer.trigger("repeatSettingsRemoved");
   }
 
   
